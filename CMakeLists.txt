@@ -16,18 +16,18 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Android")
   set(ENV{ANDROID_NDK_HOME} ${CMAKE_ANDROID_NDK})
 endif()
 
-if (NOT DEFINED ENV{VCPKG_ROOT})
-  message(FATAL_ERROR "
-    Please set an environment variable VCPKG_ROOT
-    For example:
-    export VCPKG_ROOT=/path/to/vcpkg
-    ")
-endif()
-set(VCPKG_CHAINLOAD_TOOLCHAIN_FILE ${CMAKE_TOOLCHAIN_FILE})
-set(CMAKE_TOOLCHAIN_FILE $ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake)
-if(CMAKE_TOOLCHAIN_FILE STREQUAL VCPKG_CHAINLOAD_TOOLCHAIN_FILE)
-  # prevent endless recursion
-  unset(VCPKG_CHAINLOAD_TOOLCHAIN_FILE)
+option(USE_VCPKG "
+  When the VCPKG_ROOT environment is set, the Descent3 build will source its dependencies from VCPKG.
+  Set USE_VCPKG=OFF, or unset VCPKG_ROOT, to source dependencies from the system libraries.
+  If the build was previously configured to the opposite, you will need to delete the build dir first.
+  " ON)
+if (DEFINED ENV{VCPKG_ROOT} AND USE_VCPKG)
+  set(VCPKG_CHAINLOAD_TOOLCHAIN_FILE ${CMAKE_TOOLCHAIN_FILE})
+  set(CMAKE_TOOLCHAIN_FILE $ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake)
+  if(CMAKE_TOOLCHAIN_FILE STREQUAL VCPKG_CHAINLOAD_TOOLCHAIN_FILE)
+    # prevent endless recursion
+    unset(VCPKG_CHAINLOAD_TOOLCHAIN_FILE)
+  endif()
 endif()
 
 # set default cmake build type to Debug (None Debug Release RelWithDebInfo MinSizeRel)
