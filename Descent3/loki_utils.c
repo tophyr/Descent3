@@ -32,7 +32,11 @@ const char *loki_getdatapath(void) { return basepath; }
 const char *loki_getprefpath(void) { return prefpath; }
 
 void loki_initialize() {
+#if ANDROID
+  basepath = "/sdcard/descent3";
+#else
   basepath = SDL_GetBasePath();
+#endif
   if (basepath == NULL) {
     fprintf(stderr, "ERROR: Couldn't find game directory!\n");
     exit(43);
