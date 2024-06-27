@@ -1,5 +1,5 @@
 /*
-* Descent 3 
+* Descent 3
 * Copyright (C) 2024 Parallax Software
 *
 * This program is free software: you can redistribute it and/or modify
@@ -154,7 +154,7 @@ template <class T, int t_LEN> class tQueue {
 
 public:
   tQueue() { m_head = m_tail = 0; };
-  ~tQueue(){};
+  ~tQueue() {};
 
   void send(T &item) { // sends an item onto the queue
     int16_t temp = m_tail + 1;

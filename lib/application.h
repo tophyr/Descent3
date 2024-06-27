@@ -1,5 +1,5 @@
 /*
-* Descent 3 
+* Descent 3
 * Copyright (C) 2024 Parallax Software
 *
 * This program is free software: you can redistribute it and/or modify
@@ -85,7 +85,7 @@ protected:
 
 public:
   oeApplication() { m_AppActive = true; };
-  virtual ~oeApplication(){};
+  virtual ~oeApplication() {};
   //	initializes the object
   virtual void init() = 0;
   //	Function to retrieve information from object through a platform defined structure.

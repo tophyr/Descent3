@@ -1,5 +1,5 @@
 /*
-* Descent 3 
+* Descent 3
 * Copyright (C) 2024 Parallax Software
 *
 * This program is free software: you can redistribute it and/or modify
@@ -60,12 +60,12 @@
 
 class oeAppDatabase {
 public:
-  oeAppDatabase(){};
+  oeAppDatabase() {};
 
   //	you can also create a reference to a current database.  this is good if
   //	you have a hierachical database.
-  oeAppDatabase(oeAppDatabase *parent){};
-  virtual ~oeAppDatabase(){};
+  oeAppDatabase(oeAppDatabase *parent) {};
+  virtual ~oeAppDatabase() {};
 
   //	creates an empty classification or structure where you can store information
   virtual bool create_record(const char *pathname) = 0;

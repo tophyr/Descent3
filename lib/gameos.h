@@ -107,7 +107,7 @@ public:
     m_Init = 0;
     m_Created = 0;
   };
-  virtual ~osObject(){};
+  virtual ~osObject() {};
 
   //	parent_os is the osObject that is the parent of this new object.
   //	info is a device dependent structure passed in using device independent parms.
@@ -124,8 +124,8 @@ public:
 */
 class osDatabase {
 public:
-  osDatabase(){};
-  virtual ~osDatabase(){};
+  osDatabase() {};
+  virtual ~osDatabase() {};
   virtual bool init() = 0;
   //	creates an empty classification or structure where you can store information
   virtual bool create_record(const char *pathname) = 0;
