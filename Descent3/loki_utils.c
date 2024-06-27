@@ -33,7 +33,7 @@ const char *loki_getprefpath(void) { return prefpath; }
 
 void loki_initialize() {
 #if ANDROID
-  basepath = "/sdcard/descent3";
+  basepath = "/data/local/tmp/descent3";
 #else
   basepath = SDL_GetBasePath();
 #endif
