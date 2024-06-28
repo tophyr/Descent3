@@ -1,20 +1,20 @@
-/* 
-* Descent 3 
-* Copyright (C) 2024 Parallax Software
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+/*
+ * Descent 3
+ * Copyright (C) 2024 Parallax Software
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 /*
  * $Logfile: /DescentIII/Main/Lib/BYTESWAP.H $
  * $Revision: 1.5 $
@@ -46,32 +46,32 @@
  * Revision 1.1.1.1  2000/04/18 00:00:38  icculus
  * initial checkin
  *
- * 
+ *
  * 7     10/21/99 9:27p Jeff
  * B.A. Macintosh code merge
- * 
+ *
  * 6     5/09/99 11:41p Jeff
  * function free
- * 
+ *
  * 5     5/05/99 5:27a Jeff
  * renamed endian.h to psendian.h
- * 
+ *
  * 4     5/01/99 2:52p Jeff
  * added automatic endian detection of the system
- * 
+ *
  * 3     4/17/99 7:49p Jeff
  * for some reason Linux thinks it's big endian, temp fix (undef) until I
  * get around to writting a endian check function
- * 
+ *
  * 2     1/09/99 4:38p Jeff
  * added some ifdefs and fixes to get files to compile under Linux
- * 
+ *
  * 5     5/15/97 2:22p Matt
  * Fixed (hopefully; it's not tested yet) byteswapping for floats
- * 
+ *
  * 4     2/10/97 2:22p Matt
  * Added cast
- * 
+ *
  * 3     2/10/97 2:14p Matt
  * Added BIG_ENDIAN define, & INT_FLOAT() macro
  *
@@ -84,5 +84,3 @@
 #include "BYTESWAP.H"
 
 #endif
-
-

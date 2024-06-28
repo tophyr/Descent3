@@ -9,20 +9,21 @@
 /*
  * structure for maintaining info on a MVEFILE stream
  */
-typedef struct MVEFILE
-{
-    int             stream;
-    unsigned char  *cur_chunk;
-    int             buf_size;
-    int             cur_fill;
-    int             next_segment;
+typedef struct MVEFILE {
+  int stream;
+  unsigned char *cur_chunk;
+  int buf_size;
+  int cur_fill;
+  int next_segment;
 } MVEFILE;
 
-typedef void (mve_cb_ShowFrame)(unsigned char* buf, unsigned int bufw, unsigned int bufh, unsigned int sx, unsigned int sy, unsigned int w, unsigned int h, unsigned int dstx, unsigned int dsty, unsigned int hicolor);
-typedef void (mve_cb_SetPalette)(unsigned char* p, unsigned start, unsigned count);
-typedef unsigned int (mve_cb_FileRead)(int hFile, void* pBuffer, unsigned int bufferCount);
-typedef void* (mve_cb_Malloc)(unsigned int size);
-typedef void (mve_cb_Free)(void* mem);
+typedef void(mve_cb_ShowFrame)(unsigned char *buf, unsigned int bufw, unsigned int bufh, unsigned int sx,
+                               unsigned int sy, unsigned int w, unsigned int h, unsigned int dstx, unsigned int dsty,
+                               unsigned int hicolor);
+typedef void(mve_cb_SetPalette)(unsigned char *p, unsigned start, unsigned count);
+typedef unsigned int(mve_cb_FileRead)(int hFile, void *pBuffer, unsigned int bufferCount);
+typedef void *(mve_cb_Malloc)(unsigned int size);
+typedef void(mve_cb_Free)(void *mem);
 
 /*
  * open a .MVE file
@@ -75,11 +76,10 @@ typedef int (*MVESEGMENTHANDLER)(unsigned char major, unsigned char minor, unsig
 /*
  * structure for maintaining an MVE stream
  */
-typedef struct MVESTREAM
-{
-    MVEFILE                    *movie;
-    void                       *context;
-    MVESEGMENTHANDLER           handlers[32];
+typedef struct MVESTREAM {
+  MVEFILE *movie;
+  void *context;
+  MVESEGMENTHANDLER handlers[32];
 } MVESTREAM;
 
 /*

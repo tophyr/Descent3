@@ -1,97 +1,95 @@
-/* 
-* Descent 3 
-* Copyright (C) 2024 Parallax Software
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+/*
+ * Descent 3
+ * Copyright (C) 2024 Parallax Software
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #ifndef __BRIEFPARSE_H_
 #define __BRIEFPARSE_H_
 
 #if defined(__LINUX__)
-#include "linux/linux_fix.h"//for stricmp
+#include "linux/linux_fix.h" //for stricmp
 #endif
 
 #include "TelComEfxStructs.h"
 #include "grdefs.h"
 
 //	Return codes of ParseBriefing
-#define PBERR_FILENOTEXIST	-1
-#define PBERR_NOERR			0
+#define PBERR_FILENOTEXIST -1
+#define PBERR_NOERR 0
 
-struct tBriefParseCallbacks
-{
-	void (*AddTextEffect)(LPTCTEXTDESC desc,char *text,char *description,int id);
-	void (*AddBmpEffect)(LPTCBMPDESC desc,char *description);
-	void (*AddMovieEffect)(LPTCMOVIEDESC desc,char *description);
-	void (*AddBkgEffect)(LPTCBKGDESC desc,char *description);
-	void (*AddPolyEffect)(LPTCPOLYDESC desc,char *description);
-	void (*AddSoundEffect)(LPTCSNDDESC desc,char *description);
-	void (*AddButtonEffect)(LPTCBUTTONDESC desc,char *description,int id);
-	void (*StartScreen)(int screen_num,char *description,char *layout,uint mask_set,uint mask_unset);
-	void (*EndScreen)();
-	bool (*LoopCallback)();
-	void (*SetTitle)(char *title);
-	void (*SetStatic)(float amount);
-	void (*SetGlitch)(float amount);
-	void (*AddVoice)(char *filename,int flags,char *description);
+struct tBriefParseCallbacks {
+  void (*AddTextEffect)(LPTCTEXTDESC desc, char *text, char *description, int id);
+  void (*AddBmpEffect)(LPTCBMPDESC desc, char *description);
+  void (*AddMovieEffect)(LPTCMOVIEDESC desc, char *description);
+  void (*AddBkgEffect)(LPTCBKGDESC desc, char *description);
+  void (*AddPolyEffect)(LPTCPOLYDESC desc, char *description);
+  void (*AddSoundEffect)(LPTCSNDDESC desc, char *description);
+  void (*AddButtonEffect)(LPTCBUTTONDESC desc, char *description, int id);
+  void (*StartScreen)(int screen_num, char *description, char *layout, uint mask_set, uint mask_unset);
+  void (*EndScreen)();
+  bool (*LoopCallback)();
+  void (*SetTitle)(char *title);
+  void (*SetStatic)(float amount);
+  void (*SetGlitch)(float amount);
+  void (*AddVoice)(char *filename, int flags, char *description);
 };
 
-struct tTextBufferDesc
-{
-	TCTEXTDESC textdesc;
-	int text_id;
-	int teffect;
-	char description[128];
+struct tTextBufferDesc {
+  TCTEXTDESC textdesc;
+  int text_id;
+  int teffect;
+  char description[128];
 };
 
-class CBriefParse
-{
+class CBriefParse {
 public:
-	CBriefParse();
-	~CBriefParse();
-	void SetCallbacks(tBriefParseCallbacks *cb);
-	int ParseBriefing(char *filename);
+  CBriefParse();
+  ~CBriefParse();
+  void SetCallbacks(tBriefParseCallbacks *cb);
+  int ParseBriefing(char *filename);
+
 private:
-	void (*AddTextEffect)(LPTCTEXTDESC desc,char *text,char *description,int id);
-	void (*AddBmpEffect)(LPTCBMPDESC desc,char *description);
-	void (*AddMovieEffect)(LPTCMOVIEDESC desc,char *description);
-	void (*AddBkgEffect)(LPTCBKGDESC desc,char *description);
-	void (*AddPolyEffect)(LPTCPOLYDESC desc,char *description);
-	void (*AddSoundEffect)(LPTCSNDDESC desc,char *description);
-	void (*AddButtonEffect)(LPTCBUTTONDESC desc,char *description,int id);
-	void (*StartScreen)(int screen_num,char *desc,char *layout,uint mask_set,uint mask_unset);
-	void (*EndScreen)();
-	bool (*LoopCallback)();
-	void (*SetTitle)(char *title);
-	void (*SetStatic)(float amount);
-	void (*SetGlitch)(float amount);
-	void (*AddVoice)(char *filename,int flags,char *description);
+  void (*AddTextEffect)(LPTCTEXTDESC desc, char *text, char *description, int id);
+  void (*AddBmpEffect)(LPTCBMPDESC desc, char *description);
+  void (*AddMovieEffect)(LPTCMOVIEDESC desc, char *description);
+  void (*AddBkgEffect)(LPTCBKGDESC desc, char *description);
+  void (*AddPolyEffect)(LPTCPOLYDESC desc, char *description);
+  void (*AddSoundEffect)(LPTCSNDDESC desc, char *description);
+  void (*AddButtonEffect)(LPTCBUTTONDESC desc, char *description, int id);
+  void (*StartScreen)(int screen_num, char *desc, char *layout, uint mask_set, uint mask_unset);
+  void (*EndScreen)();
+  bool (*LoopCallback)();
+  void (*SetTitle)(char *title);
+  void (*SetStatic)(float amount);
+  void (*SetGlitch)(float amount);
+  void (*AddVoice)(char *filename, int flags, char *description);
 
-	void ParseError(char *msg,char *p=NULL);
-	char *ParseComma(char *p);
-	char *ParseFloat(char *p,float *f);
-	char *ParseInt(char *p,int *i);
-	char *ParseString(char *p,char *buf,int bufsize);
-	char *ParseToken(char *p,char *buf,int bufsize);
-	char *SkipWhite(char *p);
-	char *ParseKeyword(char *p,int *keyword_id);
-	bool ParseButtonEffect(char *p);
-	bool ParseTextEffect(char *p,tTextBufferDesc *tbd);
+  void ParseError(char *msg, char *p = NULL);
+  char *ParseComma(char *p);
+  char *ParseFloat(char *p, float *f);
+  char *ParseInt(char *p, int *i);
+  char *ParseString(char *p, char *buf, int bufsize);
+  char *ParseToken(char *p, char *buf, int bufsize);
+  char *SkipWhite(char *p);
+  char *ParseKeyword(char *p, int *keyword_id);
+  bool ParseButtonEffect(char *p);
+  bool ParseTextEffect(char *p, tTextBufferDesc *tbd);
 
-	int linenum;
-	bool parse_error;
+  int linenum;
+  bool parse_error;
 };
 
 #endif

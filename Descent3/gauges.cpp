@@ -1,20 +1,20 @@
 /*
-* Descent 3
-* Copyright (C) 2024 Parallax Software
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Descent 3
+ * Copyright (C) 2024 Parallax Software
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include "gauges.h"
 #include "gamefont.h"
@@ -37,33 +37,31 @@
 
 //////////////////////////////////////////////////////////////////////////////
 
-struct tGauge
-{
-	poly_model* cockpit;				// cockpit model of gauge
-	bsp_info* monitor;					// monitor in cockpit.
-	int first_vert;
-	bool functional;					// is this gauge working?
-	bool just_init;						// gauge just initialized?
-	ushort mask;						// mask of stat for gauge
-	int state;							// gauge dependent state data.
-	union {								// data for gauge.
-		int i;
-		float f;
-	}
-	data;
-	g3Point pts[4];						// points of monitor in view coordinates. (may be cached from last frame)
+struct tGauge {
+  poly_model *cockpit; // cockpit model of gauge
+  bsp_info *monitor;   // monitor in cockpit.
+  int first_vert;
+  bool functional; // is this gauge working?
+  bool just_init;  // gauge just initialized?
+  ushort mask;     // mask of stat for gauge
+  int state;       // gauge dependent state data.
+  union {          // data for gauge.
+    int i;
+    float f;
+  } data;
+  g3Point pts[4]; // points of monitor in view coordinates. (may be cached from last frame)
 };
 
 //	which monitors correspond to what faces on the cockpit model.
-#define PRIMARY_MONITOR		SOF_MONITOR1
-#define SHIP_MONITOR		SOF_MONITOR2
-#define SECONDARY_MONITOR	SOF_MONITOR3
-#define ENERGY1_MONITOR		SOF_MONITOR4
-#define ENERGY2_MONITOR		SOF_MONITOR5
-#define SHIELD_MONITOR		SOF_MONITOR6
-#define AFTERBURN_MONITOR	SOF_MONITOR7
+#define PRIMARY_MONITOR SOF_MONITOR1
+#define SHIP_MONITOR SOF_MONITOR2
+#define SECONDARY_MONITOR SOF_MONITOR3
+#define ENERGY1_MONITOR SOF_MONITOR4
+#define ENERGY2_MONITOR SOF_MONITOR5
+#define SHIELD_MONITOR SOF_MONITOR6
+#define AFTERBURN_MONITOR SOF_MONITOR7
 
-//Hack vars for turning off the monitors
+// Hack vars for turning off the monitors
 bool Disable_primary_monitor = 0, Disable_secondary_monitor = 0;
 
 //////////////////////////////////////////////////////////////////////////////
@@ -77,19 +75,18 @@ static tStatMask Gauge_mask_modified;
 //	sets for next frame the functional state of each gauge (on/off).
 static tGauge Gauge_list[NUM_GAUGES];
 
-//	position of cockpit 
-static vector* Render_gauge_pos;
+//	position of cockpit
+static vector *Render_gauge_pos;
 
 // matrix of cockpit
-static matrix* Render_gauge_matrix;
+static matrix *Render_gauge_matrix;
 
 //	normalized times of cockpit
-static float* Render_normalized_times;
+static float *Render_normalized_times;
 
 //	if gauges are moving in cockpit.
-static bool Render_gauge_moving;					// gauge is moving, but temporarily off.
-static bool Render_gauge_reset;					//	set this if gauges will be moving, but are still active
-
+static bool Render_gauge_moving; // gauge is moving, but temporarily off.
+static bool Render_gauge_reset;  //	set this if gauges will be moving, but are still active
 
 //	loads all shield bitmaps into memory
 void FreeShieldFrames();
@@ -98,802 +95,721 @@ void FreeShieldFrames();
 void FreeShipFrames();
 
 //	projects monitor coordinates to screen coordinates
-void RotateMonitorPosition(tGauge* gauge);
+void RotateMonitorPosition(tGauge *gauge);
 
-//renders the current inventory item name at the x,y position
+// renders the current inventory item name at the x,y position
 void InventoryRenderGauge(int x, int y);
 
 //	renders the primary monitor gauge
-void RenderPrimaryMonitor(tGauge* gauge, bool modified);
+void RenderPrimaryMonitor(tGauge *gauge, bool modified);
 
 //	renders the secondary monitor gauge
-void RenderSecondaryMonitor(tGauge* gauge, bool modified);
+void RenderSecondaryMonitor(tGauge *gauge, bool modified);
 
 //	renders the shield gauge monitor
-void RenderShieldMonitor(tGauge* gauge, bool modified);
+void RenderShieldMonitor(tGauge *gauge, bool modified);
 
 //	renders the ship gauge monitor
-void RenderShipMonitor(tGauge* gauge, bool modified);
+void RenderShipMonitor(tGauge *gauge, bool modified);
 
 //	renders the ship gauge monitor
-void RenderEnergyMonitor(tGauge* gauge, int orient, bool modified);
+void RenderEnergyMonitor(tGauge *gauge, int orient, bool modified);
 
 //	renders the ship gauge monitor
-void RenderAfterburnMonitor(tGauge* gauge, bool modified);
+void RenderAfterburnMonitor(tGauge *gauge, bool modified);
 
-//	renders a monitor style quad 
-void DrawGaugeMonitor(g3Point* pts, int bm, float brightness, float* alphas);
+//	renders a monitor style quad
+void DrawGaugeMonitor(g3Point *pts, int bm, float brightness, float *alphas);
 
 //	renders a square texture onto the screen.
-void DrawGaugeQuad(g3Point* pts, int bm, float u0, float v0, float u1, float v1, ubyte alpha, bool saturate);
+void DrawGaugeQuad(g3Point *pts, int bm, float u0, float v0, float u1, float v1, ubyte alpha, bool saturate);
 
 //	renders a square texture onto the screen.
-void DrawGaugeQuad(g3Point* pts, int bm, ubyte alpha = 255, bool saturate = false);
+void DrawGaugeQuad(g3Point *pts, int bm, ubyte alpha = 255, bool saturate = false);
 
 //	renders a flat poly onto the screen with given color
-void DrawGaugeQuadFlat(g3Point* pts, float r, float g, float b, ubyte alpha);
+void DrawGaugeQuadFlat(g3Point *pts, float r, float g, float b, ubyte alpha);
 
 //	renders a flat poly onto the screen with 4 colors (for each vertex)
-void DrawGaugeQuadFlat(g3Point* pts, float* r, float* g, float* b, ubyte alpha);
+void DrawGaugeQuadFlat(g3Point *pts, float *r, float *g, float *b, ubyte alpha);
 
 // correctly orders monitor vertices based off of UVs
-int GetFirstVert(bsp_info* sm);
+int GetFirstVert(bsp_info *sm);
 
 //	tells what gauge index is the gauge stat item.
-inline int GAUGE_INDEX(tStatMask mask)
-{
-	int i;
+inline int GAUGE_INDEX(tStatMask mask) {
+  int i;
 
-	for (i = 0; i < NUM_GAUGES; i++)
-		if (Gauge_list[i].mask == mask)
-			return i;
+  for (i = 0; i < NUM_GAUGES; i++)
+    if (Gauge_list[i].mask == mask)
+      return i;
 
-	return -1;
+  return -1;
 }
-
 
 //////////////////////////////////////////////////////////////////////////////
 //	Initialization routines
 
 //	initializes cockpit gauges
-void InitGauges(ushort gauge_mask)
-{
-	Gauge_mask = gauge_mask;
-	Gauge_mask_modified = Gauge_mask;
-	int gauge = 0;
+void InitGauges(ushort gauge_mask) {
+  Gauge_mask = gauge_mask;
+  Gauge_mask_modified = Gauge_mask;
+  int gauge = 0;
 
-	for (int i = 0; i < NUM_GAUGES; i++)
-	{
-		ushort mask = Gauge_mask & (1 << i);
+  for (int i = 0; i < NUM_GAUGES; i++) {
+    ushort mask = Gauge_mask & (1 << i);
 
-		if (mask == STAT_SHIELDS)
-			Gauge_list[gauge].monitor = CockpitGetMonitorSubmodel(SHIELD_MONITOR);
-		if (mask == STAT_PRIMARYLOAD)
-			Gauge_list[gauge].monitor = CockpitGetMonitorSubmodel(PRIMARY_MONITOR);
-		else if (mask == STAT_SECONDARYLOAD)
-			Gauge_list[gauge].monitor = CockpitGetMonitorSubmodel(SECONDARY_MONITOR);
-		else if (mask == STAT_SHIP)
-			Gauge_list[gauge].monitor = CockpitGetMonitorSubmodel(SHIP_MONITOR);
-		else if (mask == STAT_ENERGY)
-		{
-			// initialize two gauges. one for left, and one for right energy monitor.
-			Gauge_list[gauge].monitor = CockpitGetMonitorSubmodel(ENERGY1_MONITOR);
-			Gauge_list[gauge].functional = false;
-			Gauge_list[gauge].state = 0;
-			Gauge_list[gauge].cockpit = CockpitGetPolyModel();
-			Gauge_list[gauge].just_init = true;
-			Gauge_list[gauge].mask = mask;
-			Gauge_list[gauge].first_vert = GetFirstVert(Gauge_list[gauge].monitor);
-			gauge++;
-			Gauge_list[gauge].monitor = CockpitGetMonitorSubmodel(ENERGY2_MONITOR);
-		}
-		else if (mask == STAT_AFTERBURN)
-			Gauge_list[gauge].monitor = CockpitGetMonitorSubmodel(AFTERBURN_MONITOR);
+    if (mask == STAT_SHIELDS)
+      Gauge_list[gauge].monitor = CockpitGetMonitorSubmodel(SHIELD_MONITOR);
+    if (mask == STAT_PRIMARYLOAD)
+      Gauge_list[gauge].monitor = CockpitGetMonitorSubmodel(PRIMARY_MONITOR);
+    else if (mask == STAT_SECONDARYLOAD)
+      Gauge_list[gauge].monitor = CockpitGetMonitorSubmodel(SECONDARY_MONITOR);
+    else if (mask == STAT_SHIP)
+      Gauge_list[gauge].monitor = CockpitGetMonitorSubmodel(SHIP_MONITOR);
+    else if (mask == STAT_ENERGY) {
+      // initialize two gauges. one for left, and one for right energy monitor.
+      Gauge_list[gauge].monitor = CockpitGetMonitorSubmodel(ENERGY1_MONITOR);
+      Gauge_list[gauge].functional = false;
+      Gauge_list[gauge].state = 0;
+      Gauge_list[gauge].cockpit = CockpitGetPolyModel();
+      Gauge_list[gauge].just_init = true;
+      Gauge_list[gauge].mask = mask;
+      Gauge_list[gauge].first_vert = GetFirstVert(Gauge_list[gauge].monitor);
+      gauge++;
+      Gauge_list[gauge].monitor = CockpitGetMonitorSubmodel(ENERGY2_MONITOR);
+    } else if (mask == STAT_AFTERBURN)
+      Gauge_list[gauge].monitor = CockpitGetMonitorSubmodel(AFTERBURN_MONITOR);
 
-		if (mask)
-		{
-			Gauge_list[gauge].functional = false;
-			Gauge_list[gauge].state = 0;
-			Gauge_list[gauge].cockpit = CockpitGetPolyModel();
-			Gauge_list[gauge].just_init = true;
-			Gauge_list[gauge].mask = mask;
-			Gauge_list[gauge].first_vert = GetFirstVert(Gauge_list[gauge].monitor);
+    if (mask) {
+      Gauge_list[gauge].functional = false;
+      Gauge_list[gauge].state = 0;
+      Gauge_list[gauge].cockpit = CockpitGetPolyModel();
+      Gauge_list[gauge].just_init = true;
+      Gauge_list[gauge].mask = mask;
+      Gauge_list[gauge].first_vert = GetFirstVert(Gauge_list[gauge].monitor);
 
-			gauge++;
-		}
-	}
+      gauge++;
+    }
+  }
 }
 
 //	deinitializes cockpit gauges
-void CloseGauges()
-{
-	for (int i = 0; i < NUM_GAUGES; i++)
-	{
-		ushort mask = Gauge_mask & (1 << i);
-		Gauge_list[i].monitor = NULL;
-	}
-	Gauge_mask = 0;
-	Gauge_mask_modified = 0;
+void CloseGauges() {
+  for (int i = 0; i < NUM_GAUGES; i++) {
+    ushort mask = Gauge_mask & (1 << i);
+    Gauge_list[i].monitor = NULL;
+  }
+  Gauge_mask = 0;
+  Gauge_mask_modified = 0;
 }
-
 
 //	renders gauges
-void RenderGauges(vector* cockpit_pos, matrix* cockpit_mat, float* normalized_time, bool moving, bool reset)
-{
-	tGauge* gauge;
-	float font_aspect_x;
-	float font_aspect_y;
+void RenderGauges(vector *cockpit_pos, matrix *cockpit_mat, float *normalized_time, bool moving, bool reset) {
+  tGauge *gauge;
+  float font_aspect_x;
+  float font_aspect_y;
 
-	Render_gauge_pos = cockpit_pos;
-	Render_gauge_matrix = cockpit_mat;
-	Render_normalized_times = normalized_time;
-	Render_gauge_moving = moving;
-	Render_gauge_reset = reset;
+  Render_gauge_pos = cockpit_pos;
+  Render_gauge_matrix = cockpit_mat;
+  Render_normalized_times = normalized_time;
+  Render_gauge_moving = moving;
+  Render_gauge_reset = reset;
 
-	grtext_Reset();
-	grtext_SetFont(HUD_FONT);
-	//	for lores screens, we use different fonts, so DONT SCALE.
-	font_aspect_x = (float)Game_window_w / Max_window_w;
-	font_aspect_y = (float)Game_window_h / Max_window_h;
+  grtext_Reset();
+  grtext_SetFont(HUD_FONT);
+  //	for lores screens, we use different fonts, so DONT SCALE.
+  font_aspect_x = (float)Game_window_w / Max_window_w;
+  font_aspect_y = (float)Game_window_h / Max_window_h;
 
-	if (font_aspect_x <= 0.60)
-		grtext_SetFontScale(0.60f);
-	else if (font_aspect_x <= 0.80)
-		grtext_SetFontScale(0.80f);
-	else
-		grtext_SetFontScale(1.0f);
+  if (font_aspect_x <= 0.60)
+    grtext_SetFontScale(0.60f);
+  else if (font_aspect_x <= 0.80)
+    grtext_SetFontScale(0.80f);
+  else
+    grtext_SetFontScale(1.0f);
 
-	if (Gauge_mask & STAT_PRIMARYLOAD)
-	{
-		ASSERT(GAUGE_INDEX(STAT_PRIMARYLOAD) != -1);
-		gauge = &Gauge_list[GAUGE_INDEX(STAT_PRIMARYLOAD)];
-		if (gauge->monitor)
-		{
-			RotateMonitorPosition(gauge);
-			RenderPrimaryMonitor(gauge, (Gauge_mask_modified & STAT_PRIMARYLOAD) ? true : false);
-		}
-		gauge->just_init = false;
-	}
-	if (Gauge_mask & STAT_SECONDARYLOAD)
-	{
-		ASSERT(GAUGE_INDEX(STAT_SECONDARYLOAD) != -1);
-		gauge = &Gauge_list[GAUGE_INDEX(STAT_SECONDARYLOAD)];
-		if (gauge->monitor)
-		{
-			RotateMonitorPosition(gauge);
-			RenderSecondaryMonitor(gauge, (Gauge_mask_modified & STAT_SECONDARYLOAD) ? true : false);
-		}
-		gauge->just_init = false;
-	}
-	if (Gauge_mask & STAT_SHIELDS)
-	{
-		ASSERT(GAUGE_INDEX(STAT_SHIELDS) != -1);
-		gauge = &Gauge_list[GAUGE_INDEX(STAT_SHIELDS)];
-		if (gauge->monitor)
-		{
-			RotateMonitorPosition(gauge);
-			RenderShieldMonitor(gauge, (Gauge_mask_modified & STAT_SHIELDS) ? true : false);
-		}
-		gauge->just_init = false;
-	}
-	if (Gauge_mask & STAT_SHIP)
-	{
-		ASSERT(GAUGE_INDEX(STAT_SHIP) != -1);
-		gauge = &Gauge_list[GAUGE_INDEX(STAT_SHIP)];
-		if (gauge->monitor)
-		{
-			RotateMonitorPosition(gauge);
-			RenderShipMonitor(gauge, (Gauge_mask_modified & STAT_SHIP) ? true : false);
-		}
-		gauge->just_init = false;
-	}
-	if (Gauge_mask & STAT_ENERGY)
-	{
-		ASSERT(GAUGE_INDEX(STAT_ENERGY) != -1);
-		gauge = &Gauge_list[GAUGE_INDEX(STAT_ENERGY)];
-		if (gauge->monitor)
-		{
-			RotateMonitorPosition(gauge);
-			RenderEnergyMonitor(gauge, 0, (Gauge_mask_modified & STAT_ENERGY) ? true : false);
-		}
-		gauge->just_init = false;
-		gauge = &Gauge_list[GAUGE_INDEX(STAT_ENERGY) + 1];
-		if (gauge->monitor)
-		{
-			RotateMonitorPosition(gauge);
-			RenderEnergyMonitor(gauge, 1, (Gauge_mask_modified & STAT_ENERGY) ? true : false);
-		}
-		gauge->just_init = false;
-	}
-	if (Gauge_mask & STAT_AFTERBURN)
-	{
-		ASSERT(GAUGE_INDEX(STAT_AFTERBURN) != -1);
-		gauge = &Gauge_list[GAUGE_INDEX(STAT_AFTERBURN)];
-		if (gauge->monitor)
-		{
-			RotateMonitorPosition(gauge);
-			RenderAfterburnMonitor(gauge, (Gauge_mask_modified & STAT_ENERGY) ? true : false);
-		}
-		gauge->just_init = false;
-	}
+  if (Gauge_mask & STAT_PRIMARYLOAD) {
+    ASSERT(GAUGE_INDEX(STAT_PRIMARYLOAD) != -1);
+    gauge = &Gauge_list[GAUGE_INDEX(STAT_PRIMARYLOAD)];
+    if (gauge->monitor) {
+      RotateMonitorPosition(gauge);
+      RenderPrimaryMonitor(gauge, (Gauge_mask_modified & STAT_PRIMARYLOAD) ? true : false);
+    }
+    gauge->just_init = false;
+  }
+  if (Gauge_mask & STAT_SECONDARYLOAD) {
+    ASSERT(GAUGE_INDEX(STAT_SECONDARYLOAD) != -1);
+    gauge = &Gauge_list[GAUGE_INDEX(STAT_SECONDARYLOAD)];
+    if (gauge->monitor) {
+      RotateMonitorPosition(gauge);
+      RenderSecondaryMonitor(gauge, (Gauge_mask_modified & STAT_SECONDARYLOAD) ? true : false);
+    }
+    gauge->just_init = false;
+  }
+  if (Gauge_mask & STAT_SHIELDS) {
+    ASSERT(GAUGE_INDEX(STAT_SHIELDS) != -1);
+    gauge = &Gauge_list[GAUGE_INDEX(STAT_SHIELDS)];
+    if (gauge->monitor) {
+      RotateMonitorPosition(gauge);
+      RenderShieldMonitor(gauge, (Gauge_mask_modified & STAT_SHIELDS) ? true : false);
+    }
+    gauge->just_init = false;
+  }
+  if (Gauge_mask & STAT_SHIP) {
+    ASSERT(GAUGE_INDEX(STAT_SHIP) != -1);
+    gauge = &Gauge_list[GAUGE_INDEX(STAT_SHIP)];
+    if (gauge->monitor) {
+      RotateMonitorPosition(gauge);
+      RenderShipMonitor(gauge, (Gauge_mask_modified & STAT_SHIP) ? true : false);
+    }
+    gauge->just_init = false;
+  }
+  if (Gauge_mask & STAT_ENERGY) {
+    ASSERT(GAUGE_INDEX(STAT_ENERGY) != -1);
+    gauge = &Gauge_list[GAUGE_INDEX(STAT_ENERGY)];
+    if (gauge->monitor) {
+      RotateMonitorPosition(gauge);
+      RenderEnergyMonitor(gauge, 0, (Gauge_mask_modified & STAT_ENERGY) ? true : false);
+    }
+    gauge->just_init = false;
+    gauge = &Gauge_list[GAUGE_INDEX(STAT_ENERGY) + 1];
+    if (gauge->monitor) {
+      RotateMonitorPosition(gauge);
+      RenderEnergyMonitor(gauge, 1, (Gauge_mask_modified & STAT_ENERGY) ? true : false);
+    }
+    gauge->just_init = false;
+  }
+  if (Gauge_mask & STAT_AFTERBURN) {
+    ASSERT(GAUGE_INDEX(STAT_AFTERBURN) != -1);
+    gauge = &Gauge_list[GAUGE_INDEX(STAT_AFTERBURN)];
+    if (gauge->monitor) {
+      RotateMonitorPosition(gauge);
+      RenderAfterburnMonitor(gauge, (Gauge_mask_modified & STAT_ENERGY) ? true : false);
+    }
+    gauge->just_init = false;
+  }
 
-	//	render all text
-	grtext_Flush();
+  //	render all text
+  grtext_Flush();
 
-	Gauge_mask_modified = 0;
+  Gauge_mask_modified = 0;
 }
-
 
 //	flags certain gauges to be modified next frame.
-void FlagGaugesModified(tStatMask mask_modified)
-{
-	Gauge_mask_modified |= mask_modified;
-}
-
+void FlagGaugesModified(tStatMask mask_modified) { Gauge_mask_modified |= mask_modified; }
 
 //	sets whether the gauges are functional
-void FlagGaugesFunctional(tStatMask mask)
-{
-	ushort i = 0x8000, j = NUM_GAUGES;
+void FlagGaugesFunctional(tStatMask mask) {
+  ushort i = 0x8000, j = NUM_GAUGES;
 
-	while (i)
-	{
-		if (mask & i)
-			Gauge_list[j - 1].functional = true;
-		i = i >> 1;
-		j--;
-	}
+  while (i) {
+    if (mask & i)
+      Gauge_list[j - 1].functional = true;
+    i = i >> 1;
+    j--;
+  }
 }
-
 
 //	sets whether the gauges are functional
-void FlagGaugesNonfunctional(tStatMask mask)
-{
-	ushort i = 0x8000, j = NUM_GAUGES;
+void FlagGaugesNonfunctional(tStatMask mask) {
+  ushort i = 0x8000, j = NUM_GAUGES;
 
-	while (i)
-	{
-		if (mask & i)
-			Gauge_list[j - 1].functional = false;
-		i = i >> 1;
-		j--;
-	}
+  while (i) {
+    if (mask & i)
+      Gauge_list[j - 1].functional = false;
+    i = i >> 1;
+    j--;
+  }
 }
-
 
 //	renders the primary monitor gauge
 //		this will normally render the primary weapon currently selected
 //		can render another view though.
 //	renders the primary monitor gauge
 
-inline int get_weapon_hud_image(int player, int type)
-{
-	player_weapon* pw = &Players[player].weapon[type];
-	weapon* wpn = GetWeaponFromIndex(player, pw->index);
+inline int get_weapon_hud_image(int player, int type) {
+  player_weapon *pw = &Players[player].weapon[type];
+  weapon *wpn = GetWeaponFromIndex(player, pw->index);
 
-	return (wpn ? wpn->hud_image_handle : BAD_BITMAP_HANDLE);
+  return (wpn ? wpn->hud_image_handle : BAD_BITMAP_HANDLE);
 }
 
-void RenderPrimaryMonitor(tGauge* gauge, bool modified)
-{
-	if (Disable_primary_monitor)
-		return;
+void RenderPrimaryMonitor(tGauge *gauge, bool modified) {
+  if (Disable_primary_monitor)
+    return;
 
-	if (gauge->functional)
-	{
-		float alphas[4];
-		alphas[0] = 1.0f;
-		alphas[1] = 1.0f;
-		alphas[2] = 1.0f;
-		alphas[3] = 1.0f;
+  if (gauge->functional) {
+    float alphas[4];
+    alphas[0] = 1.0f;
+    alphas[1] = 1.0f;
+    alphas[2] = 1.0f;
+    alphas[3] = 1.0f;
 
-		int hud_image = get_weapon_hud_image(Player_num, PW_PRIMARY);
+    int hud_image = get_weapon_hud_image(Player_num, PW_PRIMARY);
 
-		DrawGaugeMonitor(gauge->pts, hud_image, 0.5f, alphas);
+    DrawGaugeMonitor(gauge->pts, hud_image, 0.5f, alphas);
 
-		if (!Render_gauge_moving)
-		{
-			int x1, y;
-			int index = Players[Player_num].weapon[PW_PRIMARY].index;
-			ship* ship = &Ships[Players[Player_num].ship_index];
-			otype_wb_info* wb = &ship->static_wb[index];
+    if (!Render_gauge_moving) {
+      int x1, y;
+      int index = Players[Player_num].weapon[PW_PRIMARY].index;
+      ship *ship = &Ships[Players[Player_num].ship_index];
+      otype_wb_info *wb = &ship->static_wb[index];
 
-			gauge->pts[0].p3_flags &= (~PF_PROJECTED);
-			g3_ProjectPoint(&gauge->pts[0]);
-			x1 = gauge->pts[0].p3_sx;
-			y = gauge->pts[0].p3_sy;
+      gauge->pts[0].p3_flags &= (~PF_PROJECTED);
+      g3_ProjectPoint(&gauge->pts[0]);
+      x1 = gauge->pts[0].p3_sx;
+      y = gauge->pts[0].p3_sy;
 
-			grtext_SetFlags(0);
-			grtext_SetFancyColor(GR_RGB(0, 180, 0), GR_RGB(0, 180, 0), GR_RGB(0, 180, 0), GR_RGB(0, 180, 0));
-			grtext_Printf(x1 + HUD_X(30), y + HUD_Y(10), "%s", TXT(Static_weapon_ckpt_names[index][0]));
-			grtext_SetFlags(GRTEXTFLAG_SATURATE);
-			grtext_Printf(x1 + HUD_X(30), y + HUD_Y(10), "%s", TXT(Static_weapon_ckpt_names[index][0]));
+      grtext_SetFlags(0);
+      grtext_SetFancyColor(GR_RGB(0, 180, 0), GR_RGB(0, 180, 0), GR_RGB(0, 180, 0), GR_RGB(0, 180, 0));
+      grtext_Printf(x1 + HUD_X(30), y + HUD_Y(10), "%s", TXT(Static_weapon_ckpt_names[index][0]));
+      grtext_SetFlags(GRTEXTFLAG_SATURATE);
+      grtext_Printf(x1 + HUD_X(30), y + HUD_Y(10), "%s", TXT(Static_weapon_ckpt_names[index][0]));
 
-			if (strlen(TXT(Static_weapon_ckpt_names[Players[Player_num].weapon[PW_PRIMARY].index][1])))
-			{
-				grtext_SetFlags(0);
-				grtext_Printf(x1 + HUD_X(35), y + HUD_Y(20), "%s", TXT(Static_weapon_ckpt_names[index][1]));
-				grtext_SetFlags(GRTEXTFLAG_SATURATE);
-				grtext_Printf(x1 + HUD_X(35), y + HUD_Y(20), "%s", TXT(Static_weapon_ckpt_names[index][1]));
-				y = y + HUD_Y(10);
-			}
+      if (strlen(TXT(Static_weapon_ckpt_names[Players[Player_num].weapon[PW_PRIMARY].index][1]))) {
+        grtext_SetFlags(0);
+        grtext_Printf(x1 + HUD_X(35), y + HUD_Y(20), "%s", TXT(Static_weapon_ckpt_names[index][1]));
+        grtext_SetFlags(GRTEXTFLAG_SATURATE);
+        grtext_Printf(x1 + HUD_X(35), y + HUD_Y(20), "%s", TXT(Static_weapon_ckpt_names[index][1]));
+        y = y + HUD_Y(10);
+      }
 
-			if (wb && wb->ammo_usage)
-			{
-				int ammo = Players[Player_num].weapon_ammo[index];
-				grtext_SetFlags(0);
-				if (ship->fire_flags[index] & SFF_TENTHS) {
-					grtext_Printf(x1 + HUD_X(40), y + HUD_Y(20), "%d.%d", ammo / 10, ammo % 10);
-					grtext_SetFlags(GRTEXTFLAG_SATURATE);
-					grtext_Printf(x1 + HUD_X(40), y + HUD_Y(20), "%d.%d", ammo / 10, ammo % 10);
-				}
-				else {
-					grtext_Printf(x1 + HUD_X(40), y + HUD_Y(20), "%d", ammo);
-					grtext_SetFlags(GRTEXTFLAG_SATURATE);
-					grtext_Printf(x1 + HUD_X(40), y + HUD_Y(20), "%d", ammo);
-				}
-			}
-		}
-	}
+      if (wb && wb->ammo_usage) {
+        int ammo = Players[Player_num].weapon_ammo[index];
+        grtext_SetFlags(0);
+        if (ship->fire_flags[index] & SFF_TENTHS) {
+          grtext_Printf(x1 + HUD_X(40), y + HUD_Y(20), "%d.%d", ammo / 10, ammo % 10);
+          grtext_SetFlags(GRTEXTFLAG_SATURATE);
+          grtext_Printf(x1 + HUD_X(40), y + HUD_Y(20), "%d.%d", ammo / 10, ammo % 10);
+        } else {
+          grtext_Printf(x1 + HUD_X(40), y + HUD_Y(20), "%d", ammo);
+          grtext_SetFlags(GRTEXTFLAG_SATURATE);
+          grtext_Printf(x1 + HUD_X(40), y + HUD_Y(20), "%d", ammo);
+        }
+      }
+    }
+  }
 }
-
 
 //	renders the secondary monitor gauge
-void RenderSecondaryMonitor(tGauge* gauge, bool modified)
-{
-	if (Disable_secondary_monitor)
-		return;
+void RenderSecondaryMonitor(tGauge *gauge, bool modified) {
+  if (Disable_secondary_monitor)
+    return;
 
-	if (gauge->functional)
-	{
-		float alphas[4];
+  if (gauge->functional) {
+    float alphas[4];
 
-		alphas[0] = 1.0f;
-		alphas[1] = 1.0f;
-		alphas[2] = 1.0f;
-		alphas[3] = 1.0f;
+    alphas[0] = 1.0f;
+    alphas[1] = 1.0f;
+    alphas[2] = 1.0f;
+    alphas[3] = 1.0f;
 
-		int hud_image = get_weapon_hud_image(Player_num, PW_SECONDARY);
+    int hud_image = get_weapon_hud_image(Player_num, PW_SECONDARY);
 
-		DrawGaugeMonitor(gauge->pts, hud_image, 0.5f, alphas);
+    DrawGaugeMonitor(gauge->pts, hud_image, 0.5f, alphas);
 
-		if (!Render_gauge_moving)
-		{
-			int x1, y;
+    if (!Render_gauge_moving) {
+      int x1, y;
 
-			gauge->pts[0].p3_flags &= (~PF_PROJECTED);
-			g3_ProjectPoint(&gauge->pts[0]);
-			x1 = gauge->pts[0].p3_sx;
-			y = gauge->pts[0].p3_sy;
+      gauge->pts[0].p3_flags &= (~PF_PROJECTED);
+      g3_ProjectPoint(&gauge->pts[0]);
+      x1 = gauge->pts[0].p3_sx;
+      y = gauge->pts[0].p3_sy;
 
-			grtext_SetFancyColor(GR_RGB(0, 180, 0), GR_RGB(0, 180, 0), GR_RGB(0, 180, 0), GR_RGB(0, 180, 0));
-			grtext_SetFlags(0);
-			grtext_Printf(x1 + HUD_X(5), y + HUD_Y(10), "%s", TXT(Static_weapon_ckpt_names[Players[Player_num].weapon[PW_SECONDARY].index][0]));
-			grtext_SetFlags(GRTEXTFLAG_SATURATE);
-			grtext_Printf(x1 + HUD_X(5), y + HUD_Y(10), "%s", TXT(Static_weapon_ckpt_names[Players[Player_num].weapon[PW_SECONDARY].index][0]));
-			if (strlen(TXT(Static_weapon_ckpt_names[Players[Player_num].weapon[PW_SECONDARY].index][1])))
-			{
-				grtext_SetFlags(0);
-				grtext_Printf(x1 + HUD_X(5), y + HUD_Y(20), "%s", TXT(Static_weapon_ckpt_names[Players[Player_num].weapon[PW_SECONDARY].index][1]));
-				grtext_SetFlags(GRTEXTFLAG_SATURATE);
-				grtext_Printf(x1 + HUD_X(5), y + HUD_Y(20), "%s", TXT(Static_weapon_ckpt_names[Players[Player_num].weapon[PW_SECONDARY].index][1]));
-				y = y + HUD_Y(10);
-			}
-			grtext_SetFlags(0);
-			grtext_Printf(x1 + HUD_X(15), y + HUD_Y(20), "%d", Players[Player_num].weapon_ammo[Players[Player_num].weapon[PW_SECONDARY].index]);
-			grtext_SetFlags(GRTEXTFLAG_SATURATE);
-			grtext_Printf(x1 + HUD_X(15), y + HUD_Y(20), "%d", Players[Player_num].weapon_ammo[Players[Player_num].weapon[PW_SECONDARY].index]);
-		}
-	}
+      grtext_SetFancyColor(GR_RGB(0, 180, 0), GR_RGB(0, 180, 0), GR_RGB(0, 180, 0), GR_RGB(0, 180, 0));
+      grtext_SetFlags(0);
+      grtext_Printf(x1 + HUD_X(5), y + HUD_Y(10), "%s",
+                    TXT(Static_weapon_ckpt_names[Players[Player_num].weapon[PW_SECONDARY].index][0]));
+      grtext_SetFlags(GRTEXTFLAG_SATURATE);
+      grtext_Printf(x1 + HUD_X(5), y + HUD_Y(10), "%s",
+                    TXT(Static_weapon_ckpt_names[Players[Player_num].weapon[PW_SECONDARY].index][0]));
+      if (strlen(TXT(Static_weapon_ckpt_names[Players[Player_num].weapon[PW_SECONDARY].index][1]))) {
+        grtext_SetFlags(0);
+        grtext_Printf(x1 + HUD_X(5), y + HUD_Y(20), "%s",
+                      TXT(Static_weapon_ckpt_names[Players[Player_num].weapon[PW_SECONDARY].index][1]));
+        grtext_SetFlags(GRTEXTFLAG_SATURATE);
+        grtext_Printf(x1 + HUD_X(5), y + HUD_Y(20), "%s",
+                      TXT(Static_weapon_ckpt_names[Players[Player_num].weapon[PW_SECONDARY].index][1]));
+        y = y + HUD_Y(10);
+      }
+      grtext_SetFlags(0);
+      grtext_Printf(x1 + HUD_X(15), y + HUD_Y(20), "%d",
+                    Players[Player_num].weapon_ammo[Players[Player_num].weapon[PW_SECONDARY].index]);
+      grtext_SetFlags(GRTEXTFLAG_SATURATE);
+      grtext_Printf(x1 + HUD_X(15), y + HUD_Y(20), "%d",
+                    Players[Player_num].weapon_ammo[Players[Player_num].weapon[PW_SECONDARY].index]);
+    }
+  }
 }
-
 
 //	renders the shield gauge monitor
-void RenderShieldMonitor(tGauge* gauge, bool modified)
-{
-	float alpha_mod = (Objects[Players[Player_num].objnum].shields) / (float)INITIAL_SHIELDS;
+void RenderShieldMonitor(tGauge *gauge, bool modified) {
+  float alpha_mod = (Objects[Players[Player_num].objnum].shields) / (float)INITIAL_SHIELDS;
 
-	if (alpha_mod > 1.0f)
-		alpha_mod = 1.0f;
+  if (alpha_mod > 1.0f)
+    alpha_mod = 1.0f;
 
-	int img = (int)ceil((1.0f - alpha_mod - 0.1f) * NUM_SHIELD_GAUGE_FRAMES);
-	if (img < NUM_SHIELD_GAUGE_FRAMES)
-	{
-		if (img < 0)
-			img = 0;
-		img = HUD_resources.shield_bmp[img];
+  int img = (int)ceil((1.0f - alpha_mod - 0.1f) * NUM_SHIELD_GAUGE_FRAMES);
+  if (img < NUM_SHIELD_GAUGE_FRAMES) {
+    if (img < 0)
+      img = 0;
+    img = HUD_resources.shield_bmp[img];
 
-		if (gauge->functional)
-			DrawGaugeQuad(gauge->pts, img, 255);
-	}
+    if (gauge->functional)
+      DrawGaugeQuad(gauge->pts, img, 255);
+  }
 }
-
 
 //	renders the ship gauge monitor
-void RenderEnergyMonitor(tGauge* gauge, int orient, bool modified)
-{
-	if (gauge->functional)
-	{
-		float img_h = bm_h(HUD_resources.energy_bmp, 0);
-		float normalized_energy = (float)Players[Player_num].energy / (float)INITIAL_ENERGY;
-		g3Point used_pts[4], left_pts[4];
-		float img_energy_h;
-		float hgt_scalar;
-		int i;
+void RenderEnergyMonitor(tGauge *gauge, int orient, bool modified) {
+  if (gauge->functional) {
+    float img_h = bm_h(HUD_resources.energy_bmp, 0);
+    float normalized_energy = (float)Players[Player_num].energy / (float)INITIAL_ENERGY;
+    g3Point used_pts[4], left_pts[4];
+    float img_energy_h;
+    float hgt_scalar;
+    int i;
 
-		if (normalized_energy > 1.0f)
-			normalized_energy = 1.0f;
+    if (normalized_energy > 1.0f)
+      normalized_energy = 1.0f;
 
-		img_energy_h = (normalized_energy * img_h);
+    img_energy_h = (normalized_energy * img_h);
 
-		for (i = 0; i < 4; i++)
-		{
-			used_pts[i] = gauge->pts[i];
-			left_pts[i] = gauge->pts[i];
-		}
+    for (i = 0; i < 4; i++) {
+      used_pts[i] = gauge->pts[i];
+      left_pts[i] = gauge->pts[i];
+    }
 
-		//	draw energy gauge, showing how much energy below 100% you have. draw energy spent faded.
-		hgt_scalar = img_energy_h / img_h;
-		used_pts[3].p3_vec = used_pts[3].p3_vec - (used_pts[3].p3_vec - used_pts[0].p3_vec) * hgt_scalar;
-		used_pts[2].p3_vec = used_pts[2].p3_vec - (used_pts[2].p3_vec - used_pts[1].p3_vec) * hgt_scalar;
-		used_pts[3].p3_vecPreRot = used_pts[3].p3_vecPreRot - (used_pts[3].p3_vecPreRot - used_pts[0].p3_vecPreRot) * hgt_scalar;
-		used_pts[2].p3_vecPreRot = used_pts[2].p3_vecPreRot - (used_pts[2].p3_vecPreRot - used_pts[1].p3_vecPreRot) * hgt_scalar;
+    //	draw energy gauge, showing how much energy below 100% you have. draw energy spent faded.
+    hgt_scalar = img_energy_h / img_h;
+    used_pts[3].p3_vec = used_pts[3].p3_vec - (used_pts[3].p3_vec - used_pts[0].p3_vec) * hgt_scalar;
+    used_pts[2].p3_vec = used_pts[2].p3_vec - (used_pts[2].p3_vec - used_pts[1].p3_vec) * hgt_scalar;
+    used_pts[3].p3_vecPreRot =
+        used_pts[3].p3_vecPreRot - (used_pts[3].p3_vecPreRot - used_pts[0].p3_vecPreRot) * hgt_scalar;
+    used_pts[2].p3_vecPreRot =
+        used_pts[2].p3_vecPreRot - (used_pts[2].p3_vecPreRot - used_pts[1].p3_vecPreRot) * hgt_scalar;
 
-		if (!orient)
-			DrawGaugeQuad(used_pts, HUD_resources.energy_bmp, 0, 0, 1, 1.0f - normalized_energy, 64, 0);
-		else
-			DrawGaugeQuad(used_pts, HUD_resources.energy_bmp, 1, 0, 0, 1.0f - normalized_energy, 64, 0);
+    if (!orient)
+      DrawGaugeQuad(used_pts, HUD_resources.energy_bmp, 0, 0, 1, 1.0f - normalized_energy, 64, 0);
+    else
+      DrawGaugeQuad(used_pts, HUD_resources.energy_bmp, 1, 0, 0, 1.0f - normalized_energy, 64, 0);
 
-		left_pts[0].p3_vec = left_pts[0].p3_vec + (left_pts[3].p3_vec - left_pts[0].p3_vec) * (1.0f - hgt_scalar);
-		left_pts[1].p3_vec = left_pts[1].p3_vec + (left_pts[2].p3_vec - left_pts[1].p3_vec) * (1.0f - hgt_scalar);
-		left_pts[0].p3_vecPreRot = left_pts[0].p3_vecPreRot + (left_pts[3].p3_vecPreRot - left_pts[0].p3_vecPreRot) * (1.0f - hgt_scalar);
-		left_pts[1].p3_vecPreRot = left_pts[1].p3_vecPreRot + (left_pts[2].p3_vecPreRot - left_pts[1].p3_vecPreRot) * (1.0f - hgt_scalar);
+    left_pts[0].p3_vec = left_pts[0].p3_vec + (left_pts[3].p3_vec - left_pts[0].p3_vec) * (1.0f - hgt_scalar);
+    left_pts[1].p3_vec = left_pts[1].p3_vec + (left_pts[2].p3_vec - left_pts[1].p3_vec) * (1.0f - hgt_scalar);
+    left_pts[0].p3_vecPreRot =
+        left_pts[0].p3_vecPreRot + (left_pts[3].p3_vecPreRot - left_pts[0].p3_vecPreRot) * (1.0f - hgt_scalar);
+    left_pts[1].p3_vecPreRot =
+        left_pts[1].p3_vecPreRot + (left_pts[2].p3_vecPreRot - left_pts[1].p3_vecPreRot) * (1.0f - hgt_scalar);
 
-		if (!orient)
-			DrawGaugeQuad(left_pts, HUD_resources.energy_bmp, 0, 1.0f - normalized_energy, 1, 1, 255, 0);
-		else
-			DrawGaugeQuad(left_pts, HUD_resources.energy_bmp, 1, 1.0f - normalized_energy, 0, 1, 255, 0);
-	}
+    if (!orient)
+      DrawGaugeQuad(left_pts, HUD_resources.energy_bmp, 0, 1.0f - normalized_energy, 1, 1, 255, 0);
+    else
+      DrawGaugeQuad(left_pts, HUD_resources.energy_bmp, 1, 1.0f - normalized_energy, 0, 1, 255, 0);
+  }
 }
-
-
 
 //	renders the ship gauge monitor
-void RenderAfterburnMonitor(tGauge* gauge, bool modified)
-{
-	g3Point used_pts[4], left_pts[4];
+void RenderAfterburnMonitor(tGauge *gauge, bool modified) {
+  g3Point used_pts[4], left_pts[4];
 
-	if (gauge->functional)
-	{
-		float img_w = bm_w(HUD_resources.afterburn_bmp, 0);
-		float val = (Players[Player_num].afterburn_time_left / AFTERBURN_TIME);
-		float img_burn_w = (val * img_w);
-		float w_scalar;
-		int i;
+  if (gauge->functional) {
+    float img_w = bm_w(HUD_resources.afterburn_bmp, 0);
+    float val = (Players[Player_num].afterburn_time_left / AFTERBURN_TIME);
+    float img_burn_w = (val * img_w);
+    float w_scalar;
+    int i;
 
-		for (i = 0; i < 4; i++)
-		{
-			used_pts[i] = gauge->pts[i];
-			left_pts[i] = gauge->pts[i];
-		}
+    for (i = 0; i < 4; i++) {
+      used_pts[i] = gauge->pts[i];
+      left_pts[i] = gauge->pts[i];
+    }
 
-		//	draw energy gauge, 
-		//	showing how much energy below 100% you have. draw energy spent faded.
-		w_scalar = img_burn_w / img_w;
+    //	draw energy gauge,
+    //	showing how much energy below 100% you have. draw energy spent faded.
+    w_scalar = img_burn_w / img_w;
 
-		used_pts[3].p3_vec = used_pts[3].p3_vec + (used_pts[2].p3_vec - used_pts[3].p3_vec) * w_scalar;
-		used_pts[0].p3_vec = used_pts[0].p3_vec + (used_pts[1].p3_vec - used_pts[0].p3_vec) * w_scalar;
-		used_pts[3].p3_vecPreRot = used_pts[3].p3_vecPreRot + (used_pts[2].p3_vecPreRot - used_pts[3].p3_vecPreRot) * w_scalar;
-		used_pts[0].p3_vecPreRot = used_pts[0].p3_vecPreRot + (used_pts[1].p3_vecPreRot - used_pts[0].p3_vecPreRot) * w_scalar;
-		DrawGaugeQuad(used_pts, HUD_resources.afterburn_bmp, val, 0, 1, 1, 64, 0);
+    used_pts[3].p3_vec = used_pts[3].p3_vec + (used_pts[2].p3_vec - used_pts[3].p3_vec) * w_scalar;
+    used_pts[0].p3_vec = used_pts[0].p3_vec + (used_pts[1].p3_vec - used_pts[0].p3_vec) * w_scalar;
+    used_pts[3].p3_vecPreRot =
+        used_pts[3].p3_vecPreRot + (used_pts[2].p3_vecPreRot - used_pts[3].p3_vecPreRot) * w_scalar;
+    used_pts[0].p3_vecPreRot =
+        used_pts[0].p3_vecPreRot + (used_pts[1].p3_vecPreRot - used_pts[0].p3_vecPreRot) * w_scalar;
+    DrawGaugeQuad(used_pts, HUD_resources.afterburn_bmp, val, 0, 1, 1, 64, 0);
 
-		left_pts[1].p3_vec = left_pts[1].p3_vec - (left_pts[1].p3_vec - left_pts[0].p3_vec) * (1.0f - w_scalar);
-		left_pts[2].p3_vec = left_pts[2].p3_vec - (left_pts[2].p3_vec - left_pts[3].p3_vec) * (1.0f - w_scalar);
-		left_pts[1].p3_vecPreRot = left_pts[1].p3_vecPreRot - (left_pts[1].p3_vecPreRot - left_pts[0].p3_vecPreRot) * (1.0f - w_scalar);
-		left_pts[2].p3_vecPreRot = left_pts[2].p3_vecPreRot - (left_pts[2].p3_vecPreRot - left_pts[3].p3_vecPreRot) * (1.0f - w_scalar);
-		DrawGaugeQuad(left_pts, HUD_resources.afterburn_bmp, 0, 0, val, 1, 255, 0);
-	}
+    left_pts[1].p3_vec = left_pts[1].p3_vec - (left_pts[1].p3_vec - left_pts[0].p3_vec) * (1.0f - w_scalar);
+    left_pts[2].p3_vec = left_pts[2].p3_vec - (left_pts[2].p3_vec - left_pts[3].p3_vec) * (1.0f - w_scalar);
+    left_pts[1].p3_vecPreRot =
+        left_pts[1].p3_vecPreRot - (left_pts[1].p3_vecPreRot - left_pts[0].p3_vecPreRot) * (1.0f - w_scalar);
+    left_pts[2].p3_vecPreRot =
+        left_pts[2].p3_vecPreRot - (left_pts[2].p3_vecPreRot - left_pts[3].p3_vecPreRot) * (1.0f - w_scalar);
+    DrawGaugeQuad(left_pts, HUD_resources.afterburn_bmp, 0, 0, val, 1, 255, 0);
+  }
 }
-
-
 
 //	renders the ship gauge monitor
-#define GAUGE_INVSHIPRING_DELTA	0.06f
-void RenderShipMonitor(tGauge* gauge, bool modified)
-{
-	if (!gauge->functional)
-		return;
+#define GAUGE_INVSHIPRING_DELTA 0.06f
+void RenderShipMonitor(tGauge *gauge, bool modified) {
+  if (!gauge->functional)
+    return;
 
-	ubyte alpha = 255;
-	if (Objects[Players[Player_num].objnum].effect_info->type_flags & EF_CLOAKED)
-	{
-		float time_frame = Objects[Players[Player_num].objnum].effect_info->cloak_time;
-		if (time_frame < HUD_CLOAKEND_TIME)
-		{
-			alpha = 128 - 127 * FixCos(65536.0f * (time_frame - (int)time_frame));
-		}
-		else
-		{
-			alpha = 0;
-		}
-	}
+  ubyte alpha = 255;
+  if (Objects[Players[Player_num].objnum].effect_info->type_flags & EF_CLOAKED) {
+    float time_frame = Objects[Players[Player_num].objnum].effect_info->cloak_time;
+    if (time_frame < HUD_CLOAKEND_TIME) {
+      alpha = 128 - 127 * FixCos(65536.0f * (time_frame - (int)time_frame));
+    } else {
+      alpha = 0;
+    }
+  }
 
-	DrawGaugeQuad(gauge->pts, HUD_resources.ship_bmp, alpha);
-	DrawGaugeQuad(gauge->pts, HUD_resources.ship_bmp, alpha, true);
+  DrawGaugeQuad(gauge->pts, HUD_resources.ship_bmp, alpha);
+  DrawGaugeQuad(gauge->pts, HUD_resources.ship_bmp, alpha, true);
 
-	if (Players[Player_num].flags & PLAYER_FLAGS_INVULNERABLE)
-	{
-		float aspect = (float)Game_window_w / Game_window_h;
+  if (Players[Player_num].flags & PLAYER_FLAGS_INVULNERABLE) {
+    float aspect = (float)Game_window_w / Game_window_h;
 
-		float inv_time_frame = (Gametime - (int)Gametime);
-		float inv_alpha = (ubyte)(255 * (1.0f - (inv_time_frame / 2.0f)));
-		g3Point invpts[4];
-		int i;
+    float inv_time_frame = (Gametime - (int)Gametime);
+    float inv_alpha = (ubyte)(255 * (1.0f - (inv_time_frame / 2.0f)));
+    g3Point invpts[4];
+    int i;
 
-		// do invulnerability animation.
-		for (i = 0; i < 4; i++)
-		{
-			invpts[i] = gauge->pts[i];
-		}
+    // do invulnerability animation.
+    for (i = 0; i < 4; i++) {
+      invpts[i] = gauge->pts[i];
+    }
 
-		float amount = (inv_time_frame * GAUGE_INVSHIPRING_DELTA);
-		float xamount, yamount;
-		if (aspect >= 1.0f)
-		{
-			xamount = amount / aspect;
-			yamount = amount;
+    float amount = (inv_time_frame * GAUGE_INVSHIPRING_DELTA);
+    float xamount, yamount;
+    if (aspect >= 1.0f) {
+      xamount = amount / aspect;
+      yamount = amount;
 
-		}
-		else
-		{
-			xamount = amount;
-			yamount = amount * aspect;
-		}
-		invpts[0].p3_x -= xamount;
-		invpts[0].p3_y += yamount;
-		invpts[1].p3_x += xamount;
-		invpts[1].p3_y += yamount;
-		invpts[2].p3_x += xamount;
-		invpts[2].p3_y -= yamount;
-		invpts[3].p3_x -= xamount;
-		invpts[3].p3_y -= yamount;
+    } else {
+      xamount = amount;
+      yamount = amount * aspect;
+    }
+    invpts[0].p3_x -= xamount;
+    invpts[0].p3_y += yamount;
+    invpts[1].p3_x += xamount;
+    invpts[1].p3_y += yamount;
+    invpts[2].p3_x += xamount;
+    invpts[2].p3_y -= yamount;
+    invpts[3].p3_x -= xamount;
+    invpts[3].p3_y -= yamount;
 
-		DrawGaugeQuad(invpts, HUD_resources.invpulse_bmp, inv_alpha);
-		DrawGaugeQuad(invpts, HUD_resources.invpulse_bmp, inv_alpha, true);
-	}
+    DrawGaugeQuad(invpts, HUD_resources.invpulse_bmp, inv_alpha);
+    DrawGaugeQuad(invpts, HUD_resources.invpulse_bmp, inv_alpha, true);
+  }
 }
-
 
 //	projects monitor coordinates to screen coordinates
-void RotateMonitorPosition(tGauge* gauge)
-{
-	ASSERT(gauge->monitor);
-	ASSERT(gauge->monitor->num_faces == 1);
-	int subnum = gauge->monitor - gauge->cockpit->submodel;
+void RotateMonitorPosition(tGauge *gauge) {
+  ASSERT(gauge->monitor);
+  ASSERT(gauge->monitor->num_faces == 1);
+  int subnum = gauge->monitor - gauge->cockpit->submodel;
 
-	if (gauge->monitor->faces[0].nverts != 4)
-		Int3();
+  if (gauge->monitor->faces[0].nverts != 4)
+    Int3();
 
-	for (int j = 0; j < gauge->monitor->faces[0].nverts; j++)
-	{
-		//	saved the view coordinates of the monitor if the gauge is moving and/or was just initialized.
-		//	if gauge is not moving, then just use these saved points and make sure to mark them as NOT PROJECTED.
-		vector vpt;
-		vector vert;
-		vpt = gauge->monitor->verts[gauge->monitor->faces[0].vertnums[(gauge->first_vert + j) % 4]];
-		// JEFFNOTE: Since we are using hardware transforms, we want to update the points all the time
-		//if (Render_gauge_moving || gauge->just_init || Render_gauge_reset)
-		{
-			GetPolyModelPointInWorld(&vert, gauge->cockpit, Render_gauge_pos, Render_gauge_matrix, subnum, Render_normalized_times, &vpt);
-			g3_RotatePoint(&gauge->pts[j], &vert);
-		}
-	}
+  for (int j = 0; j < gauge->monitor->faces[0].nverts; j++) {
+    //	saved the view coordinates of the monitor if the gauge is moving and/or was just initialized.
+    //	if gauge is not moving, then just use these saved points and make sure to mark them as NOT PROJECTED.
+    vector vpt;
+    vector vert;
+    vpt = gauge->monitor->verts[gauge->monitor->faces[0].vertnums[(gauge->first_vert + j) % 4]];
+    // JEFFNOTE: Since we are using hardware transforms, we want to update the points all the time
+    // if (Render_gauge_moving || gauge->just_init || Render_gauge_reset)
+    {
+      GetPolyModelPointInWorld(&vert, gauge->cockpit, Render_gauge_pos, Render_gauge_matrix, subnum,
+                               Render_normalized_times, &vpt);
+      g3_RotatePoint(&gauge->pts[j], &vert);
+    }
+  }
 }
-
 
 //////////////////////////////////////////////////////////////////////////////
 //	Graphic primatives for hud
 
+//	renders a monitor style quad
+void DrawGaugeMonitor(g3Point *pts, int bm, float brightness, float *alphas) {
+  g3Point *pntlist[4];
+  g3Point pnts[4];
 
-//	renders a monitor style quad 
-void DrawGaugeMonitor(g3Point* pts, int bm, float brightness, float* alphas)
-{
-	g3Point* pntlist[4];
-	g3Point pnts[4];
+  if (bm == -1)
+    bm = BAD_BITMAP_HANDLE;
 
-	if (bm == -1)
-		bm = BAD_BITMAP_HANDLE;
+  for (int i = 0; i < 4; i++) {
+    pnts[i] = pts[i];
+    pnts[i].p3_flags = PF_UV | PF_RGBA | (pts[i].p3_flags & PF_ORIGPOINT);
+    pntlist[i] = &pnts[i];
+  }
 
-	for (int i = 0; i < 4; i++)
-	{
-		pnts[i] = pts[i];
-		pnts[i].p3_flags = PF_UV | PF_RGBA | (pts[i].p3_flags & PF_ORIGPOINT);
-		pntlist[i] = &pnts[i];
-	}
+  pnts[0].p3_u = 0;
+  pnts[0].p3_v = 0;
+  pnts[0].p3_a = alphas[0];
 
-	pnts[0].p3_u = 0;
-	pnts[0].p3_v = 0;
-	pnts[0].p3_a = alphas[0];
+  pnts[1].p3_u = 1;
+  pnts[1].p3_v = 0;
+  pnts[1].p3_a = alphas[1];
 
-	pnts[1].p3_u = 1;
-	pnts[1].p3_v = 0;
-	pnts[1].p3_a = alphas[1];
+  pnts[2].p3_u = 1;
+  pnts[2].p3_v = 1;
+  pnts[2].p3_a = alphas[2];
 
-	pnts[2].p3_u = 1;
-	pnts[2].p3_v = 1;
-	pnts[2].p3_a = alphas[2];
+  pnts[3].p3_u = 0;
+  pnts[3].p3_v = 1;
+  pnts[3].p3_a = alphas[3];
 
-	pnts[3].p3_u = 0;
-	pnts[3].p3_v = 1;
-	pnts[3].p3_a = alphas[3];
+  rend_SetZBufferState(0);
+  rend_SetTextureType(TT_LINEAR);
+  rend_SetLighting(LS_NONE);
+  rend_SetAlphaValue(brightness * 255);
 
-	rend_SetZBufferState(0);
-	rend_SetTextureType(TT_LINEAR);
-	rend_SetLighting(LS_NONE);
-	rend_SetAlphaValue(brightness * 255);
+  rend_SetAlphaType(AT_CONSTANT_VERTEX);
 
-	rend_SetAlphaType(AT_CONSTANT_VERTEX);
-
-	g3_DrawPoly(4, pntlist, bm);
+  g3_DrawPoly(4, pntlist, bm);
 }
-
 
 //	renders a square texture onto the screen.
-void DrawGaugeQuad(g3Point* pts, int bm, ubyte alpha, bool saturate)
-{
-	DrawGaugeQuad(pts, bm, 0, 0, 1, 1, alpha, saturate);
+void DrawGaugeQuad(g3Point *pts, int bm, ubyte alpha, bool saturate) {
+  DrawGaugeQuad(pts, bm, 0, 0, 1, 1, alpha, saturate);
 }
-
 
 //	renders a square texture onto the screen.
-void DrawGaugeQuad(g3Point* pts, int bm, float u0, float v0, float u1, float v1, ubyte alpha, bool saturate)
-{
-	g3Point* pntlist[4];
-	g3Point pnts[4];
+void DrawGaugeQuad(g3Point *pts, int bm, float u0, float v0, float u1, float v1, ubyte alpha, bool saturate) {
+  g3Point *pntlist[4];
+  g3Point pnts[4];
 
-	if (bm == -1)
-		bm = BAD_BITMAP_HANDLE;
+  if (bm == -1)
+    bm = BAD_BITMAP_HANDLE;
 
-	for (int i = 0; i < 4; i++)
-	{
-		pnts[i] = pts[i];
-		pnts[i].p3_flags = PF_UV | (pts[i].p3_flags & PF_ORIGPOINT);
-		pntlist[i] = &pnts[i];
-	}
+  for (int i = 0; i < 4; i++) {
+    pnts[i] = pts[i];
+    pnts[i].p3_flags = PF_UV | (pts[i].p3_flags & PF_ORIGPOINT);
+    pntlist[i] = &pnts[i];
+  }
 
-	pnts[0].p3_u = u0;
-	pnts[0].p3_v = v0;
+  pnts[0].p3_u = u0;
+  pnts[0].p3_v = v0;
 
-	pnts[1].p3_u = u1;
-	pnts[1].p3_v = v0;
+  pnts[1].p3_u = u1;
+  pnts[1].p3_v = v0;
 
-	pnts[2].p3_u = u1;
-	pnts[2].p3_v = v1;
+  pnts[2].p3_u = u1;
+  pnts[2].p3_v = v1;
 
-	pnts[3].p3_u = u0;
-	pnts[3].p3_v = v1;
+  pnts[3].p3_u = u0;
+  pnts[3].p3_v = v1;
 
+  rend_SetZBufferState(0);
+  rend_SetTextureType(TT_LINEAR);
+  rend_SetLighting(LS_NONE);
+  rend_SetAlphaValue(alpha);
 
-	rend_SetZBufferState(0);
-	rend_SetTextureType(TT_LINEAR);
-	rend_SetLighting(LS_NONE);
-	rend_SetAlphaValue(alpha);
+  if (!saturate)
+    rend_SetAlphaType(AT_CONSTANT_TEXTURE);
+  else
+    rend_SetAlphaType(AT_SATURATE_TEXTURE);
 
-	if (!saturate)
-		rend_SetAlphaType(AT_CONSTANT_TEXTURE);
-	else
-		rend_SetAlphaType(AT_SATURATE_TEXTURE);
-
-	g3_DrawPoly(4, pntlist, bm);
+  g3_DrawPoly(4, pntlist, bm);
 }
-
 
 //	renders a flat poly onto the screen with given color
-void DrawGaugeQuadFlat(g3Point* pts, float r, float g, float b, ubyte alpha)
-{
-	float ar[4] = { r,r,r,r }, ag[4] = { g,g,g,g }, ab[4] = { b,b,b,b };
+void DrawGaugeQuadFlat(g3Point *pts, float r, float g, float b, ubyte alpha) {
+  float ar[4] = {r, r, r, r}, ag[4] = {g, g, g, g}, ab[4] = {b, b, b, b};
 
-	DrawGaugeQuadFlat(pts, ar, ag, ab, alpha);
+  DrawGaugeQuadFlat(pts, ar, ag, ab, alpha);
 }
-
 
 //	renders a flat poly onto the screen with 4 colors (for each vertex)
-void DrawGaugeQuadFlat(g3Point* pts, float* r, float* g, float* b, ubyte alpha)
-{
-	g3Point* pntlist[4];
-	g3Point pnts[4];
+void DrawGaugeQuadFlat(g3Point *pts, float *r, float *g, float *b, ubyte alpha) {
+  g3Point *pntlist[4];
+  g3Point pnts[4];
 
-	for (int i = 0; i < 4; i++)
-	{
-		pnts[i] = pts[i];
-		pnts[i].p3_flags = PF_RGBA | (pts[i].p3_flags & PF_ORIGPOINT);
-		pntlist[i] = &pnts[i];
-	}
+  for (int i = 0; i < 4; i++) {
+    pnts[i] = pts[i];
+    pnts[i].p3_flags = PF_RGBA | (pts[i].p3_flags & PF_ORIGPOINT);
+    pntlist[i] = &pnts[i];
+  }
 
-	pnts[0].p3_r = r[0];
-	pnts[0].p3_g = g[0];
-	pnts[0].p3_b = b[0];
+  pnts[0].p3_r = r[0];
+  pnts[0].p3_g = g[0];
+  pnts[0].p3_b = b[0];
 
-	pnts[1].p3_r = r[1];
-	pnts[1].p3_g = g[1];
-	pnts[1].p3_b = b[1];
+  pnts[1].p3_r = r[1];
+  pnts[1].p3_g = g[1];
+  pnts[1].p3_b = b[1];
 
-	pnts[2].p3_r = r[2];
-	pnts[2].p3_g = g[2];
-	pnts[2].p3_b = b[2];
+  pnts[2].p3_r = r[2];
+  pnts[2].p3_g = g[2];
+  pnts[2].p3_b = b[2];
 
-	pnts[3].p3_r = r[3];
-	pnts[3].p3_g = g[3];
-	pnts[3].p3_b = b[3];
+  pnts[3].p3_r = r[3];
+  pnts[3].p3_g = g[3];
+  pnts[3].p3_b = b[3];
 
+  rend_SetZBufferState(0);
+  rend_SetLighting(LS_GOURAUD);
+  rend_SetTextureType(TT_FLAT);
+  rend_SetColorModel(CM_RGB);
+  rend_SetAlphaType(AT_CONSTANT);
+  rend_SetAlphaValue(alpha);
 
-	rend_SetZBufferState(0);
-	rend_SetLighting(LS_GOURAUD);
-	rend_SetTextureType(TT_FLAT);
-	rend_SetColorModel(CM_RGB);
-	rend_SetAlphaType(AT_CONSTANT);
-	rend_SetAlphaValue(alpha);
-
-	g3_DrawPoly(4, pntlist, 0);
+  g3_DrawPoly(4, pntlist, 0);
 }
-
 
 // Returns the vertex index that corresponds to the upper-left vertex
-int GetFirstVert(bsp_info* sm)
-{
-	ASSERT(sm->num_faces == 1 && sm->faces[0].nverts == 4);
-	int i;
-	polyface* face = &sm->faces[0];
-	int first_vert = -1;
+int GetFirstVert(bsp_info *sm) {
+  ASSERT(sm->num_faces == 1 && sm->faces[0].nverts == 4);
+  int i;
+  polyface *face = &sm->faces[0];
+  int first_vert = -1;
 
-	for (i = 0; i < 4 && first_vert == -1; i++)
-	{
-		if (sm->alpha[face->vertnums[i]] < .5)
-			first_vert = i;
-	}
+  for (i = 0; i < 4 && first_vert == -1; i++) {
+    if (sm->alpha[face->vertnums[i]] < .5)
+      first_vert = i;
+  }
 
-	if (first_vert < 0)
-		first_vert = 0;		// If no alpha info, just set to first vertex
+  if (first_vert < 0)
+    first_vert = 0; // If no alpha info, just set to first vertex
 
-	return first_vert;
+  return first_vert;
 }
 
-//Returns the coordinates of the specified cockpit monitor
-//Parameter:	window - 0 means primary monitor, 1 means secondary
+// Returns the coordinates of the specified cockpit monitor
+// Parameter:	window - 0 means primary monitor, 1 means secondary
 //					x0,y0,x1,y1 - these are filled in with the coordinates of the montiro
-//Returns: true if got coords, false if the monitor was animating
-bool GetCockpitWindowCoords(int window, int* left, int* top, int* right, int* bot)
-{
-	if (Render_gauge_moving)
-		return 0;
+// Returns: true if got coords, false if the monitor was animating
+bool GetCockpitWindowCoords(int window, int *left, int *top, int *right, int *bot) {
+  if (Render_gauge_moving)
+    return 0;
 
-	tGauge* gauge;
+  tGauge *gauge;
 
-	gauge = &Gauge_list[GAUGE_INDEX(window ? STAT_SECONDARYLOAD : STAT_PRIMARYLOAD)];
+  gauge = &Gauge_list[GAUGE_INDEX(window ? STAT_SECONDARYLOAD : STAT_PRIMARYLOAD)];
 
-	if (gauge->monitor) 
-	{
-#define HUD_RENDER_ZOOM	0.56f
+  if (gauge->monitor) {
+#define HUD_RENDER_ZOOM 0.56f
 
-		StartFrame(false);
-		g3_StartFrame(&Viewer_object->pos, &Viewer_object->orient, HUD_RENDER_ZOOM);
+    StartFrame(false);
+    g3_StartFrame(&Viewer_object->pos, &Viewer_object->orient, HUD_RENDER_ZOOM);
 
-		for (int i = 0; i < 2; i++)
-		{
-			gauge->pts[i * 2].p3_flags &= (~PF_PROJECTED);
-			g3_ProjectPoint(&gauge->pts[i * 2]);
-		}
+    for (int i = 0; i < 2; i++) {
+      gauge->pts[i * 2].p3_flags &= (~PF_PROJECTED);
+      g3_ProjectPoint(&gauge->pts[i * 2]);
+    }
 
-		*left = gauge->pts[0].p3_sx;
-		*top = gauge->pts[0].p3_sy;
-		*right = gauge->pts[2].p3_sx + 2;
-		*bot = gauge->pts[2].p3_sy + 2;
+    *left = gauge->pts[0].p3_sx;
+    *top = gauge->pts[0].p3_sy;
+    *right = gauge->pts[2].p3_sx + 2;
+    *bot = gauge->pts[2].p3_sy + 2;
 
-		g3_EndFrame();
-		EndFrame();
+    g3_EndFrame();
+    EndFrame();
 
-		return 1;
-	}
+    return 1;
+  }
 
-	return 0;
+  return 0;
 }

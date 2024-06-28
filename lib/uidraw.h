@@ -1,27 +1,26 @@
-/* 
-* Descent 3 
-* Copyright (C) 2024 Parallax Software
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
+/*
+ * Descent 3
+ * Copyright (C) 2024 Parallax Software
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #ifndef UIDRAW_H
 #define UIDRAW_H
 
 //	Graphics Primatives.
-void ui_StartDraw(int left, int top, int right, int bottom );
+void ui_StartDraw(int left, int top, int right, int bottom);
 void ui_EndDraw();
 
 //	sets text clipping within the startdraw region
@@ -48,8 +47,8 @@ void ui_SetCharAlpha(ubyte alpha);
 int ui_GetTextWidth(const char *text);
 int ui_GetTextHeight(const char *text);
 
-#define UI_TEXTTYPE_SATURATE		1
-#define UI_TEXTTYPE_SHADOW			2
+#define UI_TEXTTYPE_SATURATE 1
+#define UI_TEXTTYPE_SHADOW 2
 void ui_DrawSetTextType(int type);
 
 //	draws a line of text.

@@ -1,20 +1,20 @@
-/* 
-* Descent 3 
-* Copyright (C) 2024 Parallax Software
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+/*
+ * Descent 3
+ * Copyright (C) 2024 Parallax Software
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #ifndef _PILOTPICS_H__
 #define _PILOTPICS_H__
@@ -50,7 +50,7 @@ ushort PPic_QueryPilot(char *pilot_name);
 //	if it couldn't find any pilots matching.  It returns
 //	the pilot id.
 // ----------------------------------------------------------
-bool PPic_FindFirst(char *pilot_name,ushort *pilot_id);
+bool PPic_FindFirst(char *pilot_name, ushort *pilot_id);
 
 // ----------------------------------------------------------
 // PPic_FindNext
@@ -72,10 +72,10 @@ void PPic_FindClose(void);
 // ----------------------------------------------------------
 // PPic_GetPilot
 //	Purpose:
-//		Given a pilot id, it will return the pilot name of 
+//		Given a pilot id, it will return the pilot name of
 //	the pilot name.  Returns false if it's an invalid pilot id.
 // ----------------------------------------------------------
-bool PPic_GetPilot(ushort pilot_id,char *pilot_name,int buffersize);
+bool PPic_GetPilot(ushort pilot_id, char *pilot_name, int buffersize);
 
 // ----------------------------------------------------------
 // PPic_GetBitmapHandle

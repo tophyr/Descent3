@@ -1,20 +1,20 @@
-/* 
-* Descent 3 
-* Copyright (C) 2024 Parallax Software
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+/*
+ * Descent 3
+ * Copyright (C) 2024 Parallax Software
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #ifndef GAME_PATH_H
 #define GAME_PATH_H
@@ -29,29 +29,35 @@
 // chrishack -- this could be dynamically allocated at the beginning of a level
 // MAX_NODES_PER_PATH is big and so is MAX_GAME_PATHS
 
-#define MAX_GAME_PATHS		300
-#define MAX_NODES_PER_PATH	100
+#define MAX_GAME_PATHS 300
+#define MAX_NODES_PER_PATH 100
 
-struct node
-{
-	vector pos;				// where this node is in the world
-	int roomnum;			// what room?
-	int flags;				// if this point lives over the terrain, etc
-	vector fvec;
-	vector uvec;
+struct node {
+  vector pos;  // where this node is in the world
+  int roomnum; // what room?
+  int flags;   // if this point lives over the terrain, etc
+  vector fvec;
+  vector uvec;
 };
 
-class game_path
-{
-	public:
-	game_path(){num_nodes = 0; pathnodes = NULL; used = false;}
-	~game_path(){if(used) mem_free(pathnodes); used = false;}
+class game_path {
+public:
+  game_path() {
+    num_nodes = 0;
+    pathnodes = NULL;
+    used = false;
+  }
+  ~game_path() {
+    if (used)
+      mem_free(pathnodes);
+    used = false;
+  }
 
-	node *pathnodes;		
-	int num_nodes;					// how many nodes in this path?
-	char name[PAGENAME_LEN];		// the name of this path
-	ubyte flags;					// special properties of this path
-	bool used;						// if this path is in use
+  node *pathnodes;
+  int num_nodes;           // how many nodes in this path?
+  char name[PAGENAME_LEN]; // the name of this path
+  ubyte flags;             // special properties of this path
+  bool used;               // if this path is in use
 };
 
 extern game_path GamePaths[MAX_GAME_PATHS];
@@ -61,6 +67,6 @@ void InitGamePaths();
 
 // searches through GamePath index and returns index of path matching name
 // returns -1 if not found
-int FindGamePathName (char *name);
+int FindGamePathName(char *name);
 
 #endif

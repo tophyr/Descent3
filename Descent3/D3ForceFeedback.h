@@ -1,20 +1,20 @@
-/* 
-* Descent 3 
-* Copyright (C) 2024 Parallax Software
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+/*
+ * Descent 3
+ * Copyright (C) 2024 Parallax Software
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #ifndef __D3FORCEFEEDBACK_H_
 #define __D3FORCEFEEDBACK_H_
@@ -23,23 +23,23 @@
 #include "vecmat.h"
 #include "object.h"
 
-//D3Use_force_feedback
-//true if the user wants force feedback during play (if available)
+// D3Use_force_feedback
+// true if the user wants force feedback during play (if available)
 extern bool D3Use_force_feedback;
-//D3Force_auto_center
-//true if the user wants his joystick to be autocentered (if available)
+// D3Force_auto_center
+// true if the user wants his joystick to be autocentered (if available)
 extern bool D3Force_auto_center;
-//D3Force_gain
-//the gain setting of the ForceFeedback system
+// D3Force_gain
+// the gain setting of the ForceFeedback system
 extern float D3Force_gain;
 
-#define FORCE_TEST_FORCE	0
-#define FORCE_MICROWAVE		1
-#define FORCE_WALLHIT		2
+#define FORCE_TEST_FORCE 0
+#define FORCE_MICROWAVE 1
+#define FORCE_WALLHIT 2
 #define FORCE_WEAPON_RECOIL 3
-#define FORCE_VAUSS_RECOIL	4
-#define FORCE_AFTERBURNER	5
-#define FORCE_SHIPSHAKE		6
+#define FORCE_VAUSS_RECOIL 4
+#define FORCE_AFTERBURNER 5
+#define FORCE_SHIPSHAKE 6
 
 // -----------------------------------------------------------------
 //	ForceInit
@@ -147,13 +147,12 @@ void ForceEffectsClose(void);
 //	Purpose:
 //		Plays an effect
 // -----------------------------------------------------------------
-void ForceEffectsPlay(int id,float *scale,int *direction);
-void ForceEffectsPlay(int id,float *scale,vector *direction);
+void ForceEffectsPlay(int id, float *scale, int *direction);
+void ForceEffectsPlay(int id, float *scale, vector *direction);
 
-
-void DoForceForWeapon(object *me_obj,object *it_obj,vector *force);
+void DoForceForWeapon(object *me_obj, object *it_obj, vector *force);
 void DoForceForWall(object *playerobj, float hitspeed, int hitseg, int hitwall, vector *wall_normal);
-void DoForceForRecoil(object *playerobj,object *weap);
+void DoForceForRecoil(object *playerobj, object *weap);
 void DoForceForShake(float magnitude);
 
 extern bool D3Use_force_feedback;

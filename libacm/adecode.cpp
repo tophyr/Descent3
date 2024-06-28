@@ -25,106 +25,101 @@ using namespace AudioDecoder;
 
 namespace {
 
-	class InternalAudioDecoder : public IAudioDecoder {
-	public:
-		InternalAudioDecoder(ReadDataFunction readerFunction, void* pReaderData);
-		~InternalAudioDecoder();
+class InternalAudioDecoder : public IAudioDecoder {
+public:
+  InternalAudioDecoder(ReadDataFunction readerFunction, void *pReaderData);
+  ~InternalAudioDecoder();
 
-		// Initialize the decoder
-		bool Initialize();
+  // Initialize the decoder
+  bool Initialize();
 
-		// Read data from the audio decoder.
-		//   pBuffer: The buffer to receive the data into
-		//    amount: How much data to read
-		// Returns the number of bytes read - zero when we're at the end of the file
-		uint32 Read(void* pBuffer, uint32 amount);
+  // Read data from the audio decoder.
+  //   pBuffer: The buffer to receive the data into
+  //    amount: How much data to read
+  // Returns the number of bytes read - zero when we're at the end of the file
+  uint32 Read(void *pBuffer, uint32 amount);
 
-		ACMStream* m_acm = nullptr;
-		ReadDataFunction m_readerFunction;
-		void* m_pReaderData;
-	};
+  ACMStream *m_acm = nullptr;
+  ReadDataFunction m_readerFunction;
+  void *m_pReaderData;
+};
 
-	/**************************************************************/
-	/*                         Construction                       */
-	/**************************************************************/
+/**************************************************************/
+/*                         Construction                       */
+/**************************************************************/
 
-	int AcmReadFunc(void* ptr, int size, int n, void* datasrc) {
-		InternalAudioDecoder* iad = reinterpret_cast<InternalAudioDecoder*>(datasrc);
-		int ret =
-			iad->m_readerFunction(iad->m_pReaderData, ptr, (unsigned int)size * n);
+int AcmReadFunc(void *ptr, int size, int n, void *datasrc) {
+  InternalAudioDecoder *iad = reinterpret_cast<InternalAudioDecoder *>(datasrc);
+  int ret = iad->m_readerFunction(iad->m_pReaderData, ptr, (unsigned int)size * n);
 
-		// ret < 0: error, ret == 0: EOF, ret > 0: read ret bytes of data
-		// apparently acm_io_callbacks::read() expects pretty much the same behavior,
-		// except that for > 0 it's not number of bytes but number of items (like in
-		// fread())
-		if (ret > 0) {
-			ret /= size;
-		}
-		return ret;
-	}
+  // ret < 0: error, ret == 0: EOF, ret > 0: read ret bytes of data
+  // apparently acm_io_callbacks::read() expects pretty much the same behavior,
+  // except that for > 0 it's not number of bytes but number of items (like in
+  // fread())
+  if (ret > 0) {
+    ret /= size;
+  }
+  return ret;
+}
 
-	InternalAudioDecoder::InternalAudioDecoder(ReadDataFunction readerFunction,
-		void* pReaderData)
-		: m_readerFunction(readerFunction), m_pReaderData(pReaderData) {}
+InternalAudioDecoder::InternalAudioDecoder(ReadDataFunction readerFunction, void *pReaderData)
+    : m_readerFunction(readerFunction), m_pReaderData(pReaderData) {}
 
-	// Initialize the decoder
-	bool InternalAudioDecoder::Initialize() {
+// Initialize the decoder
+bool InternalAudioDecoder::Initialize() {
 
-		acm_io_callbacks io = {
-			AcmReadFunc }; // set the read function, the others are optional
+  acm_io_callbacks io = {AcmReadFunc}; // set the read function, the others are optional
 
-		int force_channels =
-			0; // 0 = let libacm figure out how many channels the file has
-		// TODO: the old libacm.cpp was more optimistic about the numbers of channel
-		// from the file header
-		//       than libacm's decode.c, which assumes that channels are always >= 2
-		//       (unless it's WAVC instead of "plain ACM"), i.e. that a file header
-		//       specifying 1 is wrong. If it turns out that we really have ACM files
-		//       with just one channel (not unusual for ingame sounds?), we might have
-		//       to either patch acm_open_decoder() or somehow detect the number of
-		//       channels here and set force_channels accordingly
-		int ret = acm_open_decoder(&m_acm, this, io, force_channels);
-		return ret == ACM_OK;
-	}
+  int force_channels = 0; // 0 = let libacm figure out how many channels the file has
+  // TODO: the old libacm.cpp was more optimistic about the numbers of channel
+  // from the file header
+  //       than libacm's decode.c, which assumes that channels are always >= 2
+  //       (unless it's WAVC instead of "plain ACM"), i.e. that a file header
+  //       specifying 1 is wrong. If it turns out that we really have ACM files
+  //       with just one channel (not unusual for ingame sounds?), we might have
+  //       to either patch acm_open_decoder() or somehow detect the number of
+  //       channels here and set force_channels accordingly
+  int ret = acm_open_decoder(&m_acm, this, io, force_channels);
+  return ret == ACM_OK;
+}
 
-	/**************************************************************/
-	/*                         Destruction                        */
-	/**************************************************************/
+/**************************************************************/
+/*                         Destruction                        */
+/**************************************************************/
 
-	InternalAudioDecoder::~InternalAudioDecoder() 
-	{
-		//mprintf((0, "InternalAudioDecoder::~InternalAudioDecoder(): destructor called\n"));
-		if (m_acm != nullptr)
-			acm_close(m_acm);
-	}
+InternalAudioDecoder::~InternalAudioDecoder() {
+  // mprintf((0, "InternalAudioDecoder::~InternalAudioDecoder(): destructor called\n"));
+  if (m_acm != nullptr)
+    acm_close(m_acm);
+}
 
-	/**************************************************************/
-	/*                           Reading                          */
-	/**************************************************************/
+/**************************************************************/
+/*                           Reading                          */
+/**************************************************************/
 
-	// Read data from the audio decoder.
-	//   pBuffer: The buffer to receive the data into
-	//    amount: How much data to read
-	// Returns the number of bytes read - zero when we're at the end of the file
-	uint32 InternalAudioDecoder::Read(void* pBuffer, uint32 amount) {
-		const int bigendianp = 0; // we want little endian samples - TODO: or only on little endian platforms?
-		const int wordlen = 2;    // the only supported value
-		const int sgned = 1;      // we want signed samples
-		uint32 totalBytesRead = 0;
-		uint8* pBuf = reinterpret_cast<uint8*>(pBuffer);
+// Read data from the audio decoder.
+//   pBuffer: The buffer to receive the data into
+//    amount: How much data to read
+// Returns the number of bytes read - zero when we're at the end of the file
+uint32 InternalAudioDecoder::Read(void *pBuffer, uint32 amount) {
+  const int bigendianp = 0; // we want little endian samples - TODO: or only on little endian platforms?
+  const int wordlen = 2;    // the only supported value
+  const int sgned = 1;      // we want signed samples
+  uint32 totalBytesRead = 0;
+  uint8 *pBuf = reinterpret_cast<uint8 *>(pBuffer);
 
-		while (totalBytesRead < amount) {
-			int numRead = acm_read(m_acm, pBuf, amount - totalBytesRead, bigendianp, wordlen, sgned);
-			// numRead < 0: error, numRead == 0: EOF, numRead > 0: amount of bytes read
-			if (numRead <= 0)
-				break;
-			totalBytesRead += numRead;
-			pBuf += numRead;
-		}
+  while (totalBytesRead < amount) {
+    int numRead = acm_read(m_acm, pBuf, amount - totalBytesRead, bigendianp, wordlen, sgned);
+    // numRead < 0: error, numRead == 0: EOF, numRead > 0: amount of bytes read
+    if (numRead <= 0)
+      break;
+    totalBytesRead += numRead;
+    pBuf += numRead;
+  }
 
-		//mprintf((0, "InternalAudioDecoder::Read: reading %d bytes, got %d\n", amount, totalBytesRead));
-		return totalBytesRead;
-	}
+  // mprintf((0, "InternalAudioDecoder::Read: reading %d bytes, got %d\n", amount, totalBytesRead));
+  return totalBytesRead;
+}
 
 } // namespace
 
@@ -140,29 +135,25 @@ namespace {
 // and also returns the number of channels (1 or 2), the sample rate
 // (e.g. 22050), and the number of samples contained in the compressed file
 // (in case you want to pre-allocate a buffer to load them all into memory).
-IAudioDecoder* AudioDecoder::CreateDecoder(ReadDataFunction readerFunction,
-	void* pReaderData,
-	uint32& numChannels,
-	uint32& sampleRate,
-	uint32& sampleCount) {
-	// allocate our decoder
-	InternalAudioDecoder* pDecoder =
-		new InternalAudioDecoder(readerFunction, pReaderData);
-	if (pDecoder == nullptr)
-		return nullptr;
+IAudioDecoder *AudioDecoder::CreateDecoder(ReadDataFunction readerFunction, void *pReaderData, uint32 &numChannels,
+                                           uint32 &sampleRate, uint32 &sampleCount) {
+  // allocate our decoder
+  InternalAudioDecoder *pDecoder = new InternalAudioDecoder(readerFunction, pReaderData);
+  if (pDecoder == nullptr)
+    return nullptr;
 
-	// initialize
-	if (!pDecoder->Initialize()) {
-		// Failed
-		delete pDecoder;
-		return nullptr;
-	}
+  // initialize
+  if (!pDecoder->Initialize()) {
+    // Failed
+    delete pDecoder;
+    return nullptr;
+  }
 
-	// extract the header information for the caller
-	numChannels = pDecoder->m_acm->info.channels;
-	sampleRate = pDecoder->m_acm->info.rate;
-	sampleCount = pDecoder->m_acm->total_values;
+  // extract the header information for the caller
+  numChannels = pDecoder->m_acm->info.channels;
+  sampleRate = pDecoder->m_acm->info.rate;
+  sampleCount = pDecoder->m_acm->total_values;
 
-	// return the decoder back to the user
-	return pDecoder;
+  // return the decoder back to the user
+  return pDecoder;
 }

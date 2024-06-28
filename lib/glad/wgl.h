@@ -102,19 +102,19 @@ extern "C" {
 #if GLAD_PLATFORM_WIN32 || defined(__CYGWIN__)
 #if defined(GLAD_API_CALL_EXPORT_BUILD)
 #if defined(__GNUC__)
-#define GLAD_API_CALL __attribute__ ((dllexport)) extern
+#define GLAD_API_CALL __attribute__((dllexport)) extern
 #else
 #define GLAD_API_CALL __declspec(dllexport) extern
 #endif
 #else
 #if defined(__GNUC__)
-#define GLAD_API_CALL __attribute__ ((dllimport)) extern
+#define GLAD_API_CALL __attribute__((dllimport)) extern
 #else
 #define GLAD_API_CALL __declspec(dllimport) extern
 #endif
 #endif
 #elif defined(__GNUC__) && defined(GLAD_API_CALL_EXPORT_BUILD)
-#define GLAD_API_CALL __attribute__ ((visibility ("default"))) extern
+#define GLAD_API_CALL __attribute__((visibility("default"))) extern
 #else
 #define GLAD_API_CALL extern
 #endif
@@ -145,13 +145,13 @@ extern "C" {
 
 #define GLAD_GENERATOR_VERSION "2.0.6"
 
-    typedef void (*GLADapiproc)(void);
+typedef void (*GLADapiproc)(void);
 
-    typedef GLADapiproc(*GLADloadfunc)(const char* name);
-    typedef GLADapiproc(*GLADuserptrloadfunc)(void* userptr, const char* name);
+typedef GLADapiproc (*GLADloadfunc)(const char *name);
+typedef GLADapiproc (*GLADuserptrloadfunc)(void *userptr, const char *name);
 
-    typedef void (*GLADprecallback)(const char* name, GLADapiproc apiproc, int len_args, ...);
-    typedef void (*GLADpostcallback)(void* ret, const char* name, GLADapiproc apiproc, int len_args, ...);
+typedef void (*GLADprecallback)(const char *name, GLADapiproc apiproc, int len_args, ...);
+typedef void (*GLADpostcallback)(void *ret, const char *name, GLADapiproc apiproc, int len_args, ...);
 
 #endif /* GLAD_PLATFORM_H_ */
 
@@ -189,107 +189,80 @@ extern "C" {
 #define WGL_SWAP_UNDERLAY8 0x00800000
 #define WGL_SWAP_UNDERLAY9 0x01000000
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    struct _GPU_DEVICE {
-        DWORD  cb;
-        CHAR   DeviceName[32];
-        CHAR   DeviceString[128];
-        DWORD  Flags;
-        RECT   rcVirtualScreen;
-    };
-    DECLARE_HANDLE(HPBUFFERARB);
-    DECLARE_HANDLE(HPBUFFEREXT);
-    DECLARE_HANDLE(HVIDEOOUTPUTDEVICENV);
-    DECLARE_HANDLE(HPVIDEODEV);
-    DECLARE_HANDLE(HPGPUNV);
-    DECLARE_HANDLE(HGPUNV);
-    DECLARE_HANDLE(HVIDEOINPUTDEVICENV);
-    typedef struct _GPU_DEVICE GPU_DEVICE;
-    typedef struct _GPU_DEVICE* PGPU_DEVICE;
-
+struct _GPU_DEVICE {
+  DWORD cb;
+  CHAR DeviceName[32];
+  CHAR DeviceString[128];
+  DWORD Flags;
+  RECT rcVirtualScreen;
+};
+DECLARE_HANDLE(HPBUFFERARB);
+DECLARE_HANDLE(HPBUFFEREXT);
+DECLARE_HANDLE(HVIDEOOUTPUTDEVICENV);
+DECLARE_HANDLE(HPVIDEODEV);
+DECLARE_HANDLE(HPGPUNV);
+DECLARE_HANDLE(HGPUNV);
+DECLARE_HANDLE(HVIDEOINPUTDEVICENV);
+typedef struct _GPU_DEVICE GPU_DEVICE;
+typedef struct _GPU_DEVICE *PGPU_DEVICE;
 
 #define WGL_VERSION_1_0 1
-    GLAD_API_CALL int GLAD_WGL_VERSION_1_0;
+GLAD_API_CALL int GLAD_WGL_VERSION_1_0;
 #define WGL_ARB_extensions_string 1
-    GLAD_API_CALL int GLAD_WGL_ARB_extensions_string;
+GLAD_API_CALL int GLAD_WGL_ARB_extensions_string;
 #define WGL_EXT_extensions_string 1
-    GLAD_API_CALL int GLAD_WGL_EXT_extensions_string;
+GLAD_API_CALL int GLAD_WGL_EXT_extensions_string;
 
+typedef int(GLAD_API_PTR *PFNCHOOSEPIXELFORMATPROC)(HDC hDc, const PIXELFORMATDESCRIPTOR *pPfd);
+typedef int(GLAD_API_PTR *PFNDESCRIBEPIXELFORMATPROC)(HDC hdc, int ipfd, UINT cjpfd, PIXELFORMATDESCRIPTOR *ppfd);
+typedef UINT(GLAD_API_PTR *PFNGETENHMETAFILEPIXELFORMATPROC)(HENHMETAFILE hemf, UINT cbBuffer,
+                                                             PIXELFORMATDESCRIPTOR *ppfd);
+typedef int(GLAD_API_PTR *PFNGETPIXELFORMATPROC)(HDC hdc);
+typedef BOOL(GLAD_API_PTR *PFNSETPIXELFORMATPROC)(HDC hdc, int ipfd, const PIXELFORMATDESCRIPTOR *ppfd);
+typedef BOOL(GLAD_API_PTR *PFNSWAPBUFFERSPROC)(HDC hdc);
+typedef BOOL(GLAD_API_PTR *PFNWGLCOPYCONTEXTPROC)(HGLRC hglrcSrc, HGLRC hglrcDst, UINT mask);
+typedef HGLRC(GLAD_API_PTR *PFNWGLCREATECONTEXTPROC)(HDC hDc);
+typedef HGLRC(GLAD_API_PTR *PFNWGLCREATELAYERCONTEXTPROC)(HDC hDc, int level);
+typedef BOOL(GLAD_API_PTR *PFNWGLDELETECONTEXTPROC)(HGLRC oldContext);
+typedef BOOL(GLAD_API_PTR *PFNWGLDESCRIBELAYERPLANEPROC)(HDC hDc, int pixelFormat, int layerPlane, UINT nBytes,
+                                                         LAYERPLANEDESCRIPTOR *plpd);
+typedef HGLRC(GLAD_API_PTR *PFNWGLGETCURRENTCONTEXTPROC)(void);
+typedef HDC(GLAD_API_PTR *PFNWGLGETCURRENTDCPROC)(void);
+typedef const char *(GLAD_API_PTR *PFNWGLGETEXTENSIONSSTRINGARBPROC)(HDC hdc);
+typedef const char *(GLAD_API_PTR *PFNWGLGETEXTENSIONSSTRINGEXTPROC)(void);
+typedef int(GLAD_API_PTR *PFNWGLGETLAYERPALETTEENTRIESPROC)(HDC hdc, int iLayerPlane, int iStart, int cEntries,
+                                                            COLORREF *pcr);
+typedef PROC(GLAD_API_PTR *PFNWGLGETPROCADDRESSPROC)(LPCSTR lpszProc);
+typedef BOOL(GLAD_API_PTR *PFNWGLMAKECURRENTPROC)(HDC hDc, HGLRC newContext);
+typedef BOOL(GLAD_API_PTR *PFNWGLREALIZELAYERPALETTEPROC)(HDC hdc, int iLayerPlane, BOOL bRealize);
+typedef int(GLAD_API_PTR *PFNWGLSETLAYERPALETTEENTRIESPROC)(HDC hdc, int iLayerPlane, int iStart, int cEntries,
+                                                            const COLORREF *pcr);
+typedef BOOL(GLAD_API_PTR *PFNWGLSHARELISTSPROC)(HGLRC hrcSrvShare, HGLRC hrcSrvSource);
+typedef BOOL(GLAD_API_PTR *PFNWGLSWAPLAYERBUFFERSPROC)(HDC hdc, UINT fuFlags);
+typedef BOOL(GLAD_API_PTR *PFNWGLUSEFONTBITMAPSPROC)(HDC hDC, DWORD first, DWORD count, DWORD listBase);
+typedef BOOL(GLAD_API_PTR *PFNWGLUSEFONTBITMAPSAPROC)(HDC hDC, DWORD first, DWORD count, DWORD listBase);
+typedef BOOL(GLAD_API_PTR *PFNWGLUSEFONTBITMAPSWPROC)(HDC hDC, DWORD first, DWORD count, DWORD listBase);
+typedef BOOL(GLAD_API_PTR *PFNWGLUSEFONTOUTLINESPROC)(HDC hDC, DWORD first, DWORD count, DWORD listBase,
+                                                      FLOAT deviation, FLOAT extrusion, int format,
+                                                      LPGLYPHMETRICSFLOAT lpgmf);
+typedef BOOL(GLAD_API_PTR *PFNWGLUSEFONTOUTLINESAPROC)(HDC hDC, DWORD first, DWORD count, DWORD listBase,
+                                                       FLOAT deviation, FLOAT extrusion, int format,
+                                                       LPGLYPHMETRICSFLOAT lpgmf);
+typedef BOOL(GLAD_API_PTR *PFNWGLUSEFONTOUTLINESWPROC)(HDC hDC, DWORD first, DWORD count, DWORD listBase,
+                                                       FLOAT deviation, FLOAT extrusion, int format,
+                                                       LPGLYPHMETRICSFLOAT lpgmf);
 
-    typedef int (GLAD_API_PTR* PFNCHOOSEPIXELFORMATPROC)(HDC hDc, const PIXELFORMATDESCRIPTOR* pPfd);
-    typedef int (GLAD_API_PTR* PFNDESCRIBEPIXELFORMATPROC)(HDC hdc, int ipfd, UINT cjpfd, PIXELFORMATDESCRIPTOR* ppfd);
-    typedef UINT(GLAD_API_PTR* PFNGETENHMETAFILEPIXELFORMATPROC)(HENHMETAFILE hemf, UINT cbBuffer, PIXELFORMATDESCRIPTOR* ppfd);
-    typedef int (GLAD_API_PTR* PFNGETPIXELFORMATPROC)(HDC hdc);
-    typedef BOOL(GLAD_API_PTR* PFNSETPIXELFORMATPROC)(HDC hdc, int ipfd, const PIXELFORMATDESCRIPTOR* ppfd);
-    typedef BOOL(GLAD_API_PTR* PFNSWAPBUFFERSPROC)(HDC hdc);
-    typedef BOOL(GLAD_API_PTR* PFNWGLCOPYCONTEXTPROC)(HGLRC hglrcSrc, HGLRC hglrcDst, UINT mask);
-    typedef HGLRC(GLAD_API_PTR* PFNWGLCREATECONTEXTPROC)(HDC hDc);
-    typedef HGLRC(GLAD_API_PTR* PFNWGLCREATELAYERCONTEXTPROC)(HDC hDc, int level);
-    typedef BOOL(GLAD_API_PTR* PFNWGLDELETECONTEXTPROC)(HGLRC oldContext);
-    typedef BOOL(GLAD_API_PTR* PFNWGLDESCRIBELAYERPLANEPROC)(HDC hDc, int pixelFormat, int layerPlane, UINT nBytes, LAYERPLANEDESCRIPTOR* plpd);
-    typedef HGLRC(GLAD_API_PTR* PFNWGLGETCURRENTCONTEXTPROC)(void);
-    typedef HDC(GLAD_API_PTR* PFNWGLGETCURRENTDCPROC)(void);
-    typedef const char* (GLAD_API_PTR* PFNWGLGETEXTENSIONSSTRINGARBPROC)(HDC hdc);
-    typedef const char* (GLAD_API_PTR* PFNWGLGETEXTENSIONSSTRINGEXTPROC)(void);
-    typedef int (GLAD_API_PTR* PFNWGLGETLAYERPALETTEENTRIESPROC)(HDC hdc, int iLayerPlane, int iStart, int cEntries, COLORREF* pcr);
-    typedef PROC(GLAD_API_PTR* PFNWGLGETPROCADDRESSPROC)(LPCSTR lpszProc);
-    typedef BOOL(GLAD_API_PTR* PFNWGLMAKECURRENTPROC)(HDC hDc, HGLRC newContext);
-    typedef BOOL(GLAD_API_PTR* PFNWGLREALIZELAYERPALETTEPROC)(HDC hdc, int iLayerPlane, BOOL bRealize);
-    typedef int (GLAD_API_PTR* PFNWGLSETLAYERPALETTEENTRIESPROC)(HDC hdc, int iLayerPlane, int iStart, int cEntries, const COLORREF* pcr);
-    typedef BOOL(GLAD_API_PTR* PFNWGLSHARELISTSPROC)(HGLRC hrcSrvShare, HGLRC hrcSrvSource);
-    typedef BOOL(GLAD_API_PTR* PFNWGLSWAPLAYERBUFFERSPROC)(HDC hdc, UINT fuFlags);
-    typedef BOOL(GLAD_API_PTR* PFNWGLUSEFONTBITMAPSPROC)(HDC hDC, DWORD first, DWORD count, DWORD listBase);
-    typedef BOOL(GLAD_API_PTR* PFNWGLUSEFONTBITMAPSAPROC)(HDC hDC, DWORD first, DWORD count, DWORD listBase);
-    typedef BOOL(GLAD_API_PTR* PFNWGLUSEFONTBITMAPSWPROC)(HDC hDC, DWORD first, DWORD count, DWORD listBase);
-    typedef BOOL(GLAD_API_PTR* PFNWGLUSEFONTOUTLINESPROC)(HDC hDC, DWORD first, DWORD count, DWORD listBase, FLOAT deviation, FLOAT extrusion, int format, LPGLYPHMETRICSFLOAT lpgmf);
-    typedef BOOL(GLAD_API_PTR* PFNWGLUSEFONTOUTLINESAPROC)(HDC hDC, DWORD first, DWORD count, DWORD listBase, FLOAT deviation, FLOAT extrusion, int format, LPGLYPHMETRICSFLOAT lpgmf);
-    typedef BOOL(GLAD_API_PTR* PFNWGLUSEFONTOUTLINESWPROC)(HDC hDC, DWORD first, DWORD count, DWORD listBase, FLOAT deviation, FLOAT extrusion, int format, LPGLYPHMETRICSFLOAT lpgmf);
-
-    GLAD_API_CALL PFNWGLGETEXTENSIONSSTRINGARBPROC glad_wglGetExtensionsStringARB;
+GLAD_API_CALL PFNWGLGETEXTENSIONSSTRINGARBPROC glad_wglGetExtensionsStringARB;
 #define wglGetExtensionsStringARB glad_wglGetExtensionsStringARB
-    GLAD_API_CALL PFNWGLGETEXTENSIONSSTRINGEXTPROC glad_wglGetExtensionsStringEXT;
+GLAD_API_CALL PFNWGLGETEXTENSIONSSTRINGEXTPROC glad_wglGetExtensionsStringEXT;
 #define wglGetExtensionsStringEXT glad_wglGetExtensionsStringEXT
 
-
-
-
-
-    GLAD_API_CALL int gladLoadWGLUserPtr(HDC hdc, GLADuserptrloadfunc load, void* userptr);
-    GLAD_API_CALL int gladLoadWGL(HDC hdc, GLADloadfunc load);
+GLAD_API_CALL int gladLoadWGLUserPtr(HDC hdc, GLADuserptrloadfunc load, void *userptr);
+GLAD_API_CALL int gladLoadWGL(HDC hdc, GLADloadfunc load);
 
 #ifdef GLAD_WGL
 
-    GLAD_API_CALL int gladLoaderLoadWGL(HDC hdc);
+GLAD_API_CALL int gladLoaderLoadWGL(HDC hdc);
 
 #endif
 #ifdef __cplusplus
