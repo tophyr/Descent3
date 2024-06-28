@@ -422,10 +422,8 @@ protected:
   void UnlockFocus();              // releases lock on input to gadget.
 
 //	called from outside gadget hierarchy.
-#if defined(__LINUX__) ||                                                                                              \
-    defined(                                                                                                           \
-        ANDROID) // gcc has a hard time tracing through the dervived classes of newuiButton and thinks it can't access
-                      // OnFormat()
+#if defined(__LINUX__) || defined(ANDROID) // gcc has a hard time tracing through the dervived classes of newuiButton
+                                           // and thinks it can't access OnFormat()
 public:
 #else
 protected:
