@@ -21,11 +21,15 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
+#include <optional>
 #include <SDL.h>
 
 #if defined(WIN32)
 #include <windows.h>
 #endif
+
+#define DECLARE_OPENGL
+#include "dyna_gl.h"
 
 #include "byteswap.h"
 #include "pserror.h"
@@ -43,9 +47,9 @@
 #include "HardwareInternal.h"
 #include "../Descent3/args.h"
 #include "NewBitmap.h"
-
-#define DECLARE_OPENGL
-#include "dyna_gl.h"
+#include "Shader.h"
+#include "shaders.h"
+#include "Program.h"
 
 #if defined(WIN32)
 #include "win/arb_extensions.h"
@@ -64,6 +68,8 @@ uint8_t Renderer_close_flag = 0;
 extern uint8_t Renderer_initted;
 renderer_type Renderer_type = RENDERER_OPENGL;
 int WindowGL = 0;
+
+std::optional<Program> gShader;
 
 #ifndef GL_UNSIGNED_SHORT_5_5_5_1
 #define GL_UNSIGNED_SHORT_5_5_5_1 0x8034
@@ -526,6 +532,8 @@ int opengl_Setup(oeApplication *app, int *width, int *height) {
   if (ParentApplication) {
     reinterpret_cast<oeLnxApplication *>(ParentApplication)->set_sizepos(0, 0, *width, *height);
   }
+
+  gShader.emplace(VertexShader{shaders::vertex}, FragmentShader{shaders::fragment});
 
   Already_loaded = 1;
   return 1;
