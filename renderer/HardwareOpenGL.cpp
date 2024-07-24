@@ -1988,19 +1988,19 @@ void rend_TransformSetToPassthru(void) {
   int width = gpu_state.screen_width;
   int height = gpu_state.screen_height;
 
-  // TODO: Generalize
+  // TODO(tophyr): Projection is now broken until a shader reimplements this logic.
   // Projection
-  dglMatrixMode(GL_PROJECTION);
-  dglLoadIdentity();
-  dglOrtho((GLfloat)0.0f, (GLfloat)(width), (GLfloat)(height), (GLfloat)0.0f, 0.0f, 1.0f);
+//  dglMatrixMode(GL_PROJECTION);
+//  dglLoadIdentity();
+//  dglOrtho((GLfloat)0.0f, (GLfloat)(width), (GLfloat)(height), (GLfloat)0.0f, 0.0f, 1.0f);
 
   // Viewport
   dglViewport(0, 0, width, height);
   dglScissor(0, 0, width, height);
 
   // ModelView
-  dglMatrixMode(GL_MODELVIEW);
-  dglLoadIdentity();
+//  dglMatrixMode(GL_MODELVIEW);
+//  dglLoadIdentity();
 }
 
 void rend_TransformSetViewport(int lx, int ty, int width, int height) {
@@ -2008,11 +2008,13 @@ void rend_TransformSetViewport(int lx, int ty, int width, int height) {
 }
 
 void rend_TransformSetProjection(float trans[4][4]) {
-  dglMatrixMode(GL_PROJECTION);
-  dglLoadMatrixf(&trans[0][0]);
+  // TODO(tophyr): Projection is now broken until a shader reimplements this logic.
+//  dglMatrixMode(GL_PROJECTION);
+//  dglLoadMatrixf(&trans[0][0]);
 }
 
 void rend_TransformSetModelView(float trans[4][4]) {
-  dglMatrixMode(GL_MODELVIEW);
-  dglLoadMatrixf(&trans[0][0]);
+  // TODO(tophyr): Projection is now broken until a shader reimplements this logic.
+//  dglMatrixMode(GL_MODELVIEW);
+//  dglLoadMatrixf(&trans[0][0]);
 }
