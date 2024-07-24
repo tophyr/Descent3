@@ -1435,9 +1435,10 @@ void rend_SetFogBorders(float nearz, float farz) {
   float fogStart = nearz;
   float fogEnd = farz;
 
-  dglFogi(GL_FOG_MODE, GL_LINEAR);
-  dglFogf(GL_FOG_START, fogStart);
-  dglFogf(GL_FOG_END, fogEnd);
+  // TODO(tophyr): Fog is now broken until a shader reimplements fog logic.
+//  dglFogi(GL_FOG_MODE, GL_LINEAR);
+//  dglFogf(GL_FOG_START, fogStart);
+//  dglFogf(GL_FOG_END, fogEnd);
 }
 
 void rend_SetRendererType(renderer_type state) {
@@ -1746,7 +1747,8 @@ void rend_SetFogColor(ddgr_color color) {
   fc[1] /= 255.0f;
   fc[2] /= 255.0f;
 
-  dglFogfv(GL_FOG_COLOR, fc);
+  // TODO(tophyr): Fog is now broken until a shader reimplements this logic.
+//  dglFogfv(GL_FOG_COLOR, fc);
 }
 
 // Sets the lighting state of opengl
