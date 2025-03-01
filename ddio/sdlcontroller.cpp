@@ -876,8 +876,8 @@ bool sdlgameController::enum_controllers() {
   m_ControlList[num_devs].buttons = nbtns;
   m_ControlList[num_devs].flags = CTF_X_AXIS | CTF_Y_AXIS; // | (naxis>=3 ? CTF_Z_AXIS : 0);
   m_ControlList[num_devs].btnmask = btnmask;
-  m_ControlList[num_devs].normalizer[0] = 320.0f;
-  m_ControlList[num_devs].normalizer[1] = 240.0f;
+  m_ControlList[num_devs].normalizer[0] = 6400.0f;
+  m_ControlList[num_devs].normalizer[1] = 6400.0f;
   m_ControlList[num_devs].normalizer[2] = 100.0f;
   m_ControlList[num_devs].sens[0] = 1.0f;
   m_ControlList[num_devs].sens[1] = 1.0f;
@@ -1108,6 +1108,13 @@ float sdlgameController::get_button_value(int8_t controller, ct_format format, u
   return val;
 }
 
+// rot: fraction of one full circle (1.0 == 360 degrees)
+static constexpr angle rotationToFixAngle(double rot) {
+  return static_cast<angle>(std::numeric_limits<angle>::max() * rot);
+}
+
+extern bool rot_x;
+static size_t frame_count_{};
 //	note controller is index into ControlList.
 float sdlgameController::get_axis_value(int8_t controller, uint8_t axis, ct_format format, bool invert) {
   struct sdlgameController::t_controller *ctldev;
@@ -1142,7 +1149,8 @@ float sdlgameController::get_axis_value(int8_t controller, uint8_t axis, ct_form
     axisval = (float)((ctldev->id == CTID_MOUSE) ? m_MseState.x : m_ExtCtlStates[ctldev->id].x);
     break;
   case CT_Y_AXIS:
-    axisval = (float)((ctldev->id == CTID_MOUSE) ? m_MseState.y : m_ExtCtlStates[ctldev->id].y);
+    axisval =
+        (float)((ctldev->id == CTID_MOUSE) ? m_MseState.y : m_ExtCtlStates[ctldev->id].y);
     break;
   case CT_Z_AXIS:
     axisval = (float)((ctldev->id == CTID_MOUSE) ? m_MseState.z : m_ExtCtlStates[ctldev->id].z);
@@ -1175,6 +1183,7 @@ float sdlgameController::get_axis_value(int8_t controller, uint8_t axis, ct_form
 
   val = axisval / normalizer;
   val = val - ((ctldev->id == CTID_MOUSE) ? 0.0f : 1.0f); // joystick needs to be normalized to -1.0 to 1.0
+  auto normalized_val = val;
 
   //	calculate adjusted value
   if (val > nullzone) {
@@ -1185,6 +1194,8 @@ float sdlgameController::get_axis_value(int8_t controller, uint8_t axis, ct_form
     val = 0.0f;
   }
   val = ctldev->sensmod[axis] * ctldev->sens[axis] * val;
+  auto sens_val = val;
+
   val = val + 1.0f;
 
   val = std::clamp(val, 0.0f, 2.0f);
@@ -1202,6 +1213,11 @@ float sdlgameController::get_axis_value(int8_t controller, uint8_t axis, ct_form
     LOG_WARNING << "gameController::axis unsupported format for function.";
   }
 
+  LOG_DEBUG << " axis: " << (int)axis << " axisval: " << axisval
+          << " ft: " << m_frame_time << " norm[axis]: " << ctldev->normalizer[axis]
+            << " norm: " << normalizer << " norm_val: " << normalized_val << " sens_val: " << sens_val
+            << " FINAL: " << val;
+
   ct_packet key_slide1, key_bank;
 
   get_packet(ctfTOGGLE_SLIDEKEY, &key_slide1);
@@ -1212,6 +1228,8 @@ float sdlgameController::get_axis_value(int8_t controller, uint8_t axis, ct_form
     return val;
   }
   if ((Current_pilot.mouselook_control) && (GAME_MODE == GetFunctionMode())) {
+    constexpr double kMaxRevPerSec = 1;
+
     // Don't do mouselook controls if they aren't enabled in multiplayer
     if ((Game_mode & GM_MULTI) && (!(Netgame.flags & NF_ALLOW_MLOOK)))
       return val;
@@ -1236,9 +1254,13 @@ float sdlgameController::get_axis_value(int8_t controller, uint8_t axis, ct_form
       if (invert)
         val = -val;
 
-      vm_AnglesToMatrix(&orient, 0.0, val * (((float)(65535.0f / 20)) * .5), 0.0);
+      vm_AnglesToMatrix(&orient, 0.0, rotationToFixAngle(val * kMaxRevPerSec * m_frame_time), 0.0);
 
       Objects[Players[Player_num].objnum].orient = Objects[Players[Player_num].objnum].orient * orient;
+
+      angvec angles{};
+      vm_ExtractAnglesFromMatrix(&angles, &Objects[Players[Player_num].objnum].orient);
+      LOG_DEBUG << "f: " << frame_count_++ << " p: " << angles.p << " h: " << angles.h << " b: " << angles.b;
 
       vm_Orthogonalize(&Objects[Players[Player_num].objnum].orient);
       ObjSetOrient(&Objects[Players[Player_num].objnum], &Objects[Players[Player_num].objnum].orient);
@@ -1259,7 +1281,7 @@ float sdlgameController::get_axis_value(int8_t controller, uint8_t axis, ct_form
       if (invert)
         val = -val;
 
-      vm_AnglesToMatrix(&orient, val * (((float)(65535.0f / 20)) * .5), 0.0, 0.0);
+      vm_AnglesToMatrix(&orient, rotationToFixAngle(val * kMaxRevPerSec * m_frame_time), 0.0, 0.0);
 
       Objects[Players[Player_num].objnum].orient = Objects[Players[Player_num].objnum].orient * orient;
 

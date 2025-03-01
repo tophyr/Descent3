@@ -1038,7 +1038,7 @@ void DoKeyboardWeapons(game_controls *controls) {
   for (i = 0; i < (int)cycle_sec.value; i++)
     SwitchPlayerWeapon(PW_SECONDARY);
 }
-
+bool rot_x{};
 void DoControllerWeapons(game_controls *controls) {
   ct_packet fire_primary_count, fire_primary_time;
   ct_packet fire_secondary_count, fire_secondary_time;
@@ -1069,8 +1069,10 @@ void DoControllerWeapons(game_controls *controls) {
   }
 
   // Flare
-  if (fire_flare_count.value > 0)
+  if (fire_flare_count.value > 0) {
+    rot_x = !rot_x;
     controls->fire_flare_down_count = (int)fire_flare_count.value;
+  }
 
   // automap
   if (automap_key.value) {
