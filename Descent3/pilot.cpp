@@ -574,6 +574,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -1852,14 +1853,9 @@ char custom_texture[_MAX_PATH];
 UIBmpWindow *bmpwindow;
 
 struct tShipListInfo {
-  int *idlist; // array of remapping indicies (list index->ship index)
-  void Init() { idlist = nullptr; }
-  void Reset() {
-    if (idlist) {
-      mem_free(idlist);
-      idlist = nullptr;
-    }
-  }
+  std::unique_ptr<int[]> idlist; // array of remapping indicies (list index->ship index)
+  void Init() { idlist.reset(); }
+  void Reset() { idlist.reset(); }
 };
 
 tShipListInfo *lp_ship_info = nullptr;
@@ -2356,7 +2352,7 @@ bool PltSelectShip(pilot *Pilot) {
     if (Ships[i].used)
       count++;
   }
-  ship_info.idlist = mem_rmalloc<int>(count);
+  ship_info.idlist = std::make_unique<int[]>(count);
   if (!ship_info.idlist)
     goto ship_id_err;
 
