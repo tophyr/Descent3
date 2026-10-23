@@ -103,6 +103,7 @@
 
 #include <cstring>
 #include <filesystem>
+#include <memory>
 
 #include "cfile.h"
 #include "ddio.h"
@@ -129,7 +130,7 @@ void FDlg_EnableWaitMessage(bool enable) {
 #define FDWM_HEIGHT 128
 #define FDWM_WIDTH 256
 
-  static NewUIGameWindow *msgbox = nullptr;
+  static std::unique_ptr<NewUIGameWindow> msgbox;
   static bool opened = false;
   newuiSheet *sheet;
 
@@ -140,7 +141,7 @@ void FDlg_EnableWaitMessage(bool enable) {
   opened = enable;
 
   if (enable) {
-    msgbox = new NewUIGameWindow;
+    msgbox = std::make_unique<NewUIGameWindow>();
     if (msgbox) {
 
       msgbox->Create(0, 0, FDWM_WIDTH, FDWM_HEIGHT, UIF_PROCESS_ALL | UIF_CENTER);
@@ -161,9 +162,8 @@ void FDlg_EnableWaitMessage(bool enable) {
     if (msgbox) {
       msgbox->Close();
       msgbox->Destroy();
-      delete msgbox;
     }
-    msgbox = nullptr;
+    msgbox.reset();
   }
 }
 
