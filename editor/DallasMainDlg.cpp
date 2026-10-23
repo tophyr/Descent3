@@ -2401,7 +2401,7 @@ void CDallasMainDlg::FormatParameterValueText(CString &text, tTreeNodeData *data
     if (data->int_val < 0 || data->int_val > Highest_room_index)
       text.Format("*INVALID_ROOM*");
     else
-      text.Format("%s", Rooms[data->int_val].name);
+      text.Format("%s", Rooms[data->int_val].name.get());
     break;
   case TRIGGER_PARAMETER_TYPE:
     if (data->int_val == NOT_SPECIFIED_TYPE) {
@@ -4397,25 +4397,25 @@ int CDallasMainDlg::AddNameToListFromTreeNode(HTREEITEM node, bool show_notspec_
       }
 
       // Check for invalid room names
-      if (strcmp(data->str_val, Rooms[r].name) != 0) {
+      if (strcmp(data->str_val, Rooms[r].name.get()) != 0) {
         int index = osipf_FindRoomName(data->str_val);
         if (index >= 0) {
-          if (InvNameIndValPrompt(scriptID, "Room", r, data->str_val, Rooms[r].name, index) == IDYES) {
+          if (InvNameIndValPrompt(scriptID, "Room", r, data->str_val, Rooms[r].name.get(), index) == IDYES) {
             data->int_val = index;
             UpdateAllParentNodesText(node);
             AddRoomToList(data->str_val);
             return 0;
           }
         }
-        InvNameIndValMsg(scriptID, "Room", r, data->str_val, Rooms[r].name);
-        strcpy(data->str_val, Rooms[r].name);
+        InvNameIndValMsg(scriptID, "Room", r, data->str_val, Rooms[r].name.get());
+        strcpy(data->str_val, Rooms[r].name.get());
         UpdateAllParentNodesText(node);
         AddRoomToList(data->str_val);
         return 0;
       }
 
       // All is cool, so just add the name
-      AddRoomToList(Rooms[r].name);
+      AddRoomToList(Rooms[r].name.get());
     } break;
     case TRIGGER_PARAMETER_TYPE: {
       // Check for not specified triggers
@@ -8246,7 +8246,7 @@ HTREEITEM CDallasMainDlg::ParseScriptNodeLine_v0(char *line, int linenum, HTREEI
         node_data.int_val = NOT_SPECIFIED_TYPE;
         strcpy(node_data.str_val, "");
       } else {
-        strcpy(node_data.str_val, Rooms[index].name);
+        strcpy(node_data.str_val, Rooms[index].name.get());
       }
 
       add_node = TRUE;
@@ -11762,7 +11762,7 @@ int CDallasMainDlg::FillRoomMenu(CMenu *room_menu, int command_offset) {
   // Fill the menus with objects that have custom names
   for (i = 0, rp = Rooms; i <= Highest_room_index; i++, rp++) {
     if ((rp->used) && (rp->name)) {
-      room_menu->AppendMenu(MF_ENABLED | MF_UNCHECKED | MF_STRING, command_offset + i, rp->name);
+      room_menu->AppendMenu(MF_ENABLED | MF_UNCHECKED | MF_STRING, command_offset + i, rp->name.get());
       rooms_added++;
     }
   }
@@ -13060,7 +13060,7 @@ void CDallasMainDlg::AssignNamedValue(int type, int handle) {
         if (data->int_val < 0 || data->int_val > Highest_room_index)
           strcpy(data->str_val, "");
         else {
-          strncpy(data->str_val, Rooms[data->int_val].name, MAX_MESSAGE_NAME_LEN);
+          strncpy(data->str_val, Rooms[data->int_val].name.get(), MAX_MESSAGE_NAME_LEN);
           data->str_val[MAX_MESSAGE_NAME_LEN] = '\0';
         }
       }
