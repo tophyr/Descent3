@@ -336,7 +336,6 @@ int AllocTexture(void) {
 
   GameTextures[i].corona_type = 0;
   GameTextures[i].bumpmap = -1;
-  GameTextures[i].procedural = nullptr;
   GameTextures[i].name[0] = 0;
   GameTextures[i].flags = 0; // default to no type
   GameTextures[i].alpha = 1.0;
@@ -416,7 +415,7 @@ int AllocateProceduralForTexture(int handle) {
     w = h = 128;
   }
 
-  GameTextures[handle].procedural = new proc_struct();
+  GameTextures[handle].procedural = std::make_unique<proc_struct>();
 
   GameTextures[handle].procedural->last_evaluation_time = 0;
   GameTextures[handle].procedural->osc_time = 0;
@@ -793,9 +792,7 @@ void BuildTextureBumpmaps(int texhandle) {
 void FreeProceduralForTexture(int n) {
   if (GameTextures[n].procedural != nullptr) {
     bm_FreeBitmap(GameTextures[n].procedural->procedural_bitmap);
-    delete GameTextures[n].procedural;
-
-    GameTextures[n].procedural = nullptr;
+    GameTextures[n].procedural.reset();
   }
 }
 
