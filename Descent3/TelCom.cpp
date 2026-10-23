@@ -3972,42 +3972,26 @@ struct tCustomKeyEventID {
   int downcount;
   int key_id;
   int event_id;
-  tCustomKeyEventID *next;
+  std::unique_ptr<tCustomKeyEventID> next;
 };
-tCustomKeyEventID *Telcom_custom_key_event_root = nullptr;
+std::unique_ptr<tCustomKeyEventID> Telcom_custom_key_event_root;
 
 /*
         Removes any custom key event translation masks
 */
-void TelCom_ClearCustomKeyEvents(void) {
-  tCustomKeyEventID *next, *curr = Telcom_custom_key_event_root;
-
-  while (curr) {
-    next = curr->next;
-
-    mem_free(curr);
-    curr = next;
-  }
-  Telcom_custom_key_event_root = nullptr;
-}
+void TelCom_ClearCustomKeyEvents(void) { Telcom_custom_key_event_root.reset(); }
 
 /*
         Adds a custom key event translation mask
 */
 void TelCom_AddCustomKeyEvent(int key_id, int event_id) {
-  tCustomKeyEventID *curr = Telcom_custom_key_event_root;
-
-  if (!curr) {
-    curr = Telcom_custom_key_event_root = mem_rmalloc<tCustomKeyEventID>();
-  } else {
-    while (curr->next) {
-      curr = curr->next;
-    }
-    curr->next = mem_rmalloc<tCustomKeyEventID>();
-    curr = curr->next;
+  std::unique_ptr<tCustomKeyEventID> *tail = &Telcom_custom_key_event_root;
+  while (*tail) {
+    tail = &(*tail)->next;
   }
+  *tail = std::make_unique<tCustomKeyEventID>();
+  tCustomKeyEventID *curr = tail->get();
 
-  curr->next = nullptr;
   curr->event_id = event_id;
   curr->key_id = key_id;
 }
@@ -4016,11 +4000,11 @@ void TelCom_AddCustomKeyEvent(int key_id, int event_id) {
         Prepares to handle custom keys
 */
 void TelCom_PrepareCustomKeyEvents(void) {
-  tCustomKeyEventID *curr = Telcom_custom_key_event_root;
+  tCustomKeyEventID *curr = Telcom_custom_key_event_root.get();
 
   while (curr) {
     curr->downcount = 0;
-    curr = curr->next;
+    curr = curr->next.get();
   }
 }
 
@@ -4028,7 +4012,7 @@ void TelCom_PrepareCustomKeyEvents(void) {
         Post process custom keys
 */
 void TelCom_PostProcessCustomKeyEvents(void) {
-  tCustomKeyEventID *curr = Telcom_custom_key_event_root;
+  tCustomKeyEventID *curr = Telcom_custom_key_event_root.get();
 
   while (curr) {
     if (curr->downcount) {
@@ -4036,7 +4020,7 @@ void TelCom_PostProcessCustomKeyEvents(void) {
       return;
     }
 
-    curr = curr->next;
+    curr = curr->next.get();
   }
 }
 
@@ -4044,7 +4028,7 @@ void TelCom_PostProcessCustomKeyEvents(void) {
         Handles a possible custom key event
 */
 void TelCom_ProcessCustomKeyEvent(int key_id) {
-  tCustomKeyEventID *curr = Telcom_custom_key_event_root;
+  tCustomKeyEventID *curr = Telcom_custom_key_event_root.get();
 
   while (curr) {
     if (key_id == curr->key_id) {
@@ -4052,6 +4036,6 @@ void TelCom_ProcessCustomKeyEvent(int key_id) {
       return;
     }
 
-    curr = curr->next;
+    curr = curr->next.get();
   }
 }
