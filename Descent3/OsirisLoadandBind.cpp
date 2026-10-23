@@ -1497,18 +1497,13 @@ bool Osiris_BindScriptsToObject(object *obj) {
       LOG_ERROR.printf("OSIRIS: Unable to load module (%s) to bind to object (%s)", default_module_name, page_name);
     } else {
       // allocate the memory for the object's scripts
-      obj->osiris_script = mem_rmalloc<tOSIRISScript>();
-      if (!obj->osiris_script) {
-        // out of memory
-        LOG_ERROR << "OSIRIS: Out of memory trying to bind script";
-        return false;
-      }
+      obj->osiris_script = std::make_unique<tOSIRISScript>();
 
       obj->osiris_script->default_script.script_instance = nullptr;
       obj->osiris_script->custom_script.script_instance = nullptr;
       obj->osiris_script->mission_script.script_instance = nullptr;
       obj->osiris_script->level_script.script_instance = nullptr;
-      os = obj->osiris_script;
+      os = obj->osiris_script.get();
 
       // we have the module loaded for the object, now we need to setup its default script
       gos_id = OSIRIS_loaded_modules[dll_id].GetGOScriptID(page_name, isdoor);
@@ -1575,19 +1570,14 @@ bool Osiris_BindScriptsToObject(object *obj) {
         if (gos_id != -1) {
           if (!obj->osiris_script) {
             // we need to allocate memory for a script
-            obj->osiris_script = mem_rmalloc<tOSIRISScript>();
-            if (!obj->osiris_script) {
-              // out of memory
-              LOG_ERROR << "OSIRIS: Out of memory trying to bind script";
-              return false;
-            }
+            obj->osiris_script = std::make_unique<tOSIRISScript>();
 
             obj->osiris_script->default_script.script_instance = nullptr;
             obj->osiris_script->custom_script.script_instance = nullptr;
             obj->osiris_script->mission_script.script_instance = nullptr;
             obj->osiris_script->level_script.script_instance = nullptr;
           }
-          os = obj->osiris_script;
+          os = obj->osiris_script.get();
 
           // ok, the level dll has a script for us
           gos_instance = OSIRIS_loaded_modules[dll_id].CreateInstance(gos_id);
@@ -1632,19 +1622,14 @@ bool Osiris_BindScriptsToObject(object *obj) {
 
             if (!obj->osiris_script) {
               // we need to allocate memory for a script
-              obj->osiris_script = mem_rmalloc<tOSIRISScript>();
-              if (!obj->osiris_script) {
-                // out of memory
-                LOG_ERROR << "OSIRIS: Out of memory trying to bind script";
-                return false;
-              }
+              obj->osiris_script = std::make_unique<tOSIRISScript>();
 
               obj->osiris_script->default_script.script_instance = nullptr;
               obj->osiris_script->custom_script.script_instance = nullptr;
               obj->osiris_script->mission_script.script_instance = nullptr;
               obj->osiris_script->level_script.script_instance = nullptr;
             }
-            os = obj->osiris_script;
+            os = obj->osiris_script.get();
 
             gos_instance = OSIRIS_loaded_modules[dll_id].CreateInstance(gos_id);
             if (!gos_instance) {
@@ -1702,19 +1687,14 @@ bool Osiris_BindScriptsToObject(object *obj) {
         if (gos_id != -1) {
           if (!obj->osiris_script) {
             // we need to allocate memory for a script
-            obj->osiris_script = mem_rmalloc<tOSIRISScript>();
-            if (!obj->osiris_script) {
-              // out of memory
-              LOG_ERROR << "OSIRIS: Out of memory trying to bind script";
-              return false;
-            }
+            obj->osiris_script = std::make_unique<tOSIRISScript>();
 
             obj->osiris_script->default_script.script_instance = nullptr;
             obj->osiris_script->custom_script.script_instance = nullptr;
             obj->osiris_script->mission_script.script_instance = nullptr;
             obj->osiris_script->level_script.script_instance = nullptr;
           }
-          os = obj->osiris_script;
+          os = obj->osiris_script.get();
 
           // ok, the mission dll has a script for us
           gos_instance = OSIRIS_loaded_modules[dll_id].CreateInstance(gos_id);
@@ -1783,7 +1763,7 @@ void Osiris_DetachScriptsFromObject(object *obj) {
   int dll_id;
   tOSIRISScript *os;
 
-  os = obj->osiris_script;
+  os = obj->osiris_script.get();
 
   // free up the scripts for the object, starting with its default script
   if (os->default_script.script_instance) {
@@ -1937,8 +1917,7 @@ void Osiris_DetachScriptsFromObject(object *obj) {
   }
 
   // finally free up the memory allocated for the script struct
-  mem_free(obj->osiris_script);
-  obj->osiris_script = nullptr;
+  obj->osiris_script.reset();
 }
 
 //	Osiris_CallLevelEvent
@@ -2174,7 +2153,7 @@ bool Osiris_CallEvent(object *obj, int event, tOSIRISEventInfo *data) {
     }
   }
 
-  os = obj->osiris_script;
+  os = obj->osiris_script.get();
   data->me_handle = obj->handle;
 
   if (os->custom_script.script_instance) {
