@@ -1255,10 +1255,12 @@ void FixConcaveFaces(room *rp, int *facelist, int facecount) {
 
           newfaces[t].normal = rp->faces[t].normal;
           newfaces[t].tmap = rp->faces[t].tmap;
-          newfaces[t].flags = rp->faces[t].flags;
+          newfaces[t].flags = rp->faces[t].flags & ~FF_LIGHTMAP; // the rebuilt face has no lightmap
           newfaces[t].portal_num = rp->faces[t].portal_num;
           newfaces[t].num_verts = rp->faces[t].num_verts;
+          newfaces[t].lmi_handle = BAD_LMI_INDEX;
           newfaces[t].special_handle = BAD_SPECIAL_FACE_INDEX;
+          newfaces[t].light_multiple = rp->faces[t].light_multiple;
 
           for (k = 0; k < nverts; k++) {
             newfaces[t].face_verts[k] = rp->faces[t].face_verts[k];
@@ -1274,10 +1276,12 @@ void FixConcaveFaces(room *rp, int *facelist, int facecount) {
           ASSERT(newfaces[t].face_uvls != nullptr);
 
           newfaces[t].tmap = rp->faces[t].tmap;
-          newfaces[t].flags = rp->faces[t].flags;
+          newfaces[t].flags = rp->faces[t].flags & ~FF_LIGHTMAP; // the rebuilt face has no lightmap
           newfaces[t].portal_num = rp->faces[t].portal_num;
           newfaces[t].num_verts = 3;
+          newfaces[t].lmi_handle = BAD_LMI_INDEX;
           newfaces[t].special_handle = BAD_SPECIAL_FACE_INDEX;
+          newfaces[t].light_multiple = rp->faces[t].light_multiple;
 
           for (k = 0; k < nverts; k++) {
             newfaces[t].face_verts[k] = rp->faces[t].face_verts[k];
