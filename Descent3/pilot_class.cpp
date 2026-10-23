@@ -208,7 +208,7 @@ void pilot::initialize(void) {
   game_window_w = Video_res_list[Current_video_resolution_id].width;
   game_window_h = Video_res_list[Current_video_resolution_id].height;
   num_missions_flown = 0;
-  mission_data = nullptr;
+  mission_data.reset();
   mouselook_control = false;
   key_ramping = 0.35f;
   lrearview_enabled = false;
@@ -279,10 +279,7 @@ void pilot::clean(bool reset) {
   audio3_file.reset();
   audio4_file.reset();
 
-  if (mission_data) {
-    mem_free(mission_data);
-    mission_data = nullptr;
-  }
+  mission_data.reset();
 
   guidebot_name.reset();
 
@@ -840,20 +837,15 @@ void pilot::add_mission_data(tMissionData *mdata) {
 
   LOG_DEBUG.printf("Adding new mission data for (%s)", mdata->mission_name);
 
-  auto new_data = mem_rmalloc<tMissionData>(num_missions_flown + 1);
-  if (!new_data) {
-    LOG_WARNING << "Out of memory";
-    return;
-  }
+  auto new_data = std::make_unique<tMissionData[]>(num_missions_flown + 1);
 
   ASSERT(num_missions_flown >= 0);
 
   if (mission_data && num_missions_flown > 0) {
-    memcpy(new_data, mission_data, sizeof(tMissionData) * num_missions_flown);
-    mem_free(mission_data);
+    memcpy(new_data.get(), mission_data.get(), sizeof(tMissionData) * num_missions_flown);
   }
 
-  mission_data = new_data;
+  mission_data = std::move(new_data);
 
   memcpy(&mission_data[num_missions_flown], mdata, sizeof(tMissionData));
 
@@ -1185,16 +1177,7 @@ void pilot::read_mission_data(CFILE *file, bool skip) {
 
   if (!skip) {
     // allocate needed memory
-    if (mission_data) {
-      mem_free(mission_data);
-      mission_data = nullptr;
-    }
-    mission_data = mem_rmalloc<tMissionData>(num_missions_flown);
-    if (!mission_data) {
-      // out of memory
-      num_missions_flown = 0;
-      skip = true;
-    }
+    mission_data = std::make_unique<tMissionData[]>(num_missions_flown);
   }
 
   for (i = 0; i < temp_i; i++) {

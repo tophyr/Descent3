@@ -297,7 +297,7 @@ private:
   int game_window_w, game_window_h; // game window size
 
   int num_missions_flown;     // number of mission's flown
-  tMissionData *mission_data; // mission data
+  std::unique_ptr<tMissionData[]> mission_data; // mission data
 
   uint16_t PrimarySelectList[MAX_PRIMARY_WEAPONS];
   uint16_t SecondarySelectList[MAX_SECONDARY_WEAPONS];
