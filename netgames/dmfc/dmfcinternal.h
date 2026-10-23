@@ -572,7 +572,7 @@ protected:
 struct tHostsNode {
   uint32_t ip;
   uint32_t mask;
-  tHostsNode *next;
+  std::unique_ptr<tHostsNode> next;
 }; // Allow/Deny IP address nodes
 
 // DMFCBase class
@@ -2098,8 +2098,8 @@ private:
   void *m_UIUserData;
   uint16_t *Local_object_list;
   uint16_t *Server_object_list;
-  tHostsNode *m_DenyList;
-  tHostsNode *m_AllowList;
+  std::unique_ptr<tHostsNode> m_DenyList;
+  std::unique_ptr<tHostsNode> m_AllowList;
   bool LossGuageEnabled;
   bool DMFCInit;
   bool DisplayTauntIndicator;
