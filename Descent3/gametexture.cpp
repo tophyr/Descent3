@@ -726,7 +726,6 @@ void FreeTextureBumpmaps(int tex_handle) {
 // Builds the bumpmaps for the past in texture
 void BuildTextureBumpmaps(int texhandle) {
   int i, t;
-  int8_t *buffer;
 
   if (GameTextures[texhandle].flags & TF_ANIMATED)
     return; // No bumps for animated textures
@@ -746,8 +745,7 @@ void BuildTextureBumpmaps(int texhandle) {
   GameTextures[texhandle].bumpmap = bump;
 
   // allocate memory for our buffer
-  buffer = (int8_t *)mem_malloc(w * h);
-  ASSERT(buffer);
+  auto buffer = std::make_unique<int8_t[]>(w * h);
 
   uint16_t *src_data = (uint16_t *)bm_data(GameTextures[texhandle].bm_handle, 0);
 
@@ -789,8 +787,6 @@ void BuildTextureBumpmaps(int texhandle) {
       *pDst++ = (int8_t)iDv;
     }
   }
-
-  mem_free(buffer);
 }
 
 // Frees all the procedural memory for a texture
