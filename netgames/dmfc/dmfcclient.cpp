@@ -689,7 +689,7 @@ void DMFCBase::OnSpecialPacket(void) {
   int id = data[0];
 
   tSPHandler *current;
-  current = SPRoot;
+  current = SPRoot.get();
   while (current) {
     if (current->ID == id) {
       // we got a winner
@@ -705,7 +705,7 @@ void DMFCBase::OnSpecialPacket(void) {
       }
       return;
     }
-    current = current->next;
+    current = current->next.get();
   }
 }
 
