@@ -546,7 +546,6 @@ DMFCBase::DMFCBase(void) {
   AutoBalanceItem = nullptr;
   AllowTeamChangeItem = nullptr;
   ObserverItem = nullptr;
-  m_BanList = nullptr;
   StatisticMessagesItem = nullptr;
   SaveStatsLevelEndItem = nullptr;
   SaveStatsDisconnectItem = nullptr;
@@ -3034,22 +3033,12 @@ void DMFCBase::BanPlayerFromGame(int pnum) {
   if (pnum >= 0 && pnum < DLLMAX_PLAYERS) {
     mprintf(0, "Banning %s\n", Players[pnum].callsign);
     DPrintf(DTXT_DEDS_BAN, Players[pnum].callsign);
-    tBanItem *c;
-    c = m_BanList;
-    if (!m_BanList) {
-      c = m_BanList = (tBanItem *)malloc(sizeof(tBanItem));
-      if (!c)
-        return;
-    } else {
-      while (c->next) {
-        c = c->next;
-      }
-      c->next = (tBanItem *)malloc(sizeof(tBanItem));
-      c = c->next;
-      if (!c)
-        return;
+    std::unique_ptr<tBanItem> *tail = &m_BanList;
+    while (*tail) {
+      tail = &(*tail)->next;
     }
-    c->next = nullptr;
+    *tail = std::make_unique<tBanItem>();
+    tBanItem *c = tail->get();
     memcpy(&c->addr, &NetPlayers[pnum].addr, sizeof(network_address));
     strncpy(c->callsign, Players[pnum].callsign, MAX_CALLSIGN_SIZE - 1);
     c->callsign[MAX_CALLSIGN_SIZE - 1] = '\0';
@@ -3070,14 +3059,7 @@ void DMFCBase::BanPlayerFromGame(int pnum) {
 //
 //	Removes all the temp bans
 void DMFCBase::RemoveAllBans(void) {
-  tBanItem *c, *n;
-  c = n = m_BanList;
-  while (c) {
-    n = c->next;
-    free(c);
-    c = n;
-  }
-  m_BanList = nullptr;
+  m_BanList.reset();
   m_iNumBanPlayers = 0;
 }
 
@@ -3094,13 +3076,13 @@ char *DMFCBase::GetBannedPlayerCallsign(int index) {
     return nullptr;
 
   tBanItem *c;
-  c = m_BanList;
+  c = m_BanList.get();
   while (c) {
     if (index == 0) {
       return c->callsign;
     }
     index--;
-    c = c->next;
+    c = c->next.get();
   }
   return nullptr;
 }
@@ -3112,25 +3094,15 @@ bool DMFCBase::RemoveBan(int index) {
   if (index < 0 || index >= m_iNumBanPlayers)
     return false;
 
-  tBanItem *c, *p;
-  c = m_BanList;
-  p = nullptr;
-  while (c) {
+  std::unique_ptr<tBanItem> *link = &m_BanList;
+  while (*link) {
     if (!index) {
       // we found em, remove em
-      if (p) {
-        p->next = c->next;
-        free(c);
-        m_iNumBanPlayers--;
-      } else {
-        m_BanList = c->next;
-        free(c);
-        m_iNumBanPlayers--;
-      }
+      *link = std::move((*link)->next);
+      m_iNumBanPlayers--;
       return true;
     }
-    p = c;
-    c = c->next;
+    link = &(*link)->next;
     index--;
   }
   return false;
@@ -3159,7 +3131,7 @@ bool DMFCBase::IsPlayerBanned(int pnum) {
 //	returns true if the given address is banned from the game
 bool DMFCBase::IsAddressBanned(network_address *addr, const char *tracker_id) {
   tBanItem *c;
-  c = m_BanList;
+  c = m_BanList.get();
 
   mprintf(0, "Checking a ban on an address...");
 
@@ -3175,7 +3147,7 @@ bool DMFCBase::IsAddressBanned(network_address *addr, const char *tracker_id) {
       }
     }
 
-    c = c->next;
+    c = c->next.get();
   }
 
   if (!addr) {
