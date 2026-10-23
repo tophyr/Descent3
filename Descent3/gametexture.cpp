@@ -416,8 +416,7 @@ int AllocateProceduralForTexture(int handle) {
     w = h = 128;
   }
 
-  GameTextures[handle].procedural = mem_rmalloc<proc_struct>();
-  ASSERT(GameTextures[handle].procedural);
+  GameTextures[handle].procedural = new proc_struct();
 
   GameTextures[handle].procedural->proc1 = nullptr;
   GameTextures[handle].procedural->proc2 = nullptr;
@@ -812,7 +811,7 @@ void FreeProceduralForTexture(int n) {
     mem_free(GameTextures[n].procedural->proc2);
     bm_FreeBitmap(GameTextures[n].procedural->procedural_bitmap);
     mem_free(GameTextures[n].procedural->palette);
-    mem_free(GameTextures[n].procedural);
+    delete GameTextures[n].procedural;
 
     GameTextures[n].procedural = nullptr;
   }
