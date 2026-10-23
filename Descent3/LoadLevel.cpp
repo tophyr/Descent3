@@ -3189,7 +3189,7 @@ void ReadMatcenChunk(CFILE *fp, int version) {
 
   Num_matcens = cf_ReadInt(fp);
   for (i = 0; i < Num_matcens; i++) {
-    Matcen[i] = new matcen;
+    Matcen[i] = std::make_unique<matcen>();
     Matcen[i]->LoadData(fp);
   }
 }
