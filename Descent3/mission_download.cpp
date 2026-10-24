@@ -726,21 +726,21 @@ int msn_ExtractZipFile(const std::filesystem::path &zipfilename, const std::file
     Descent->defer();
     process_file = true;
 
-    LOG_DEBUG.printf("Processing: %s", ze->name);
+    LOG_DEBUG.printf("Processing: %s", ze->name.get());
 
     if (ze->compression_method == 0x0000 || ze->compression_method == 0x0008) {
-      char *rfile = strrchr(ze->name, '/');
+      char *rfile = strrchr(ze->name.get(), '/');
       if (rfile)
         rfile++;
       else
-        rfile = ze->name;
+        rfile = ze->name.get();
 
       snprintf(buffer, sizeof(buffer), "%s %s...", (ze->compression_method == 0x0000) ? "Extracting" : "Inflating",
                rfile);
       console.puts(GR_GREEN, buffer);
 
       // create the filename for this file
-      _get_zipfilename(output_filename, mission_directory, ze->name);
+      _get_zipfilename(output_filename, mission_directory, ze->name.get());
 
       if (cfexist(output_filename)) {
         snprintf(buffer, sizeof(buffer), "%s already exists. Overwrite?", output_filename);
@@ -785,7 +785,7 @@ int msn_ExtractZipFile(const std::filesystem::path &zipfilename, const std::file
             console.puts(GR_GREEN, "CRC OK");
 
             // check to see if we extracted our mn3
-            if (CompareZipFileName(ze->name, (const char*)mn3name.u8string().c_str())) {
+            if (CompareZipFileName(ze->name.get(), (const char *)mn3name.u8string().c_str())) {
               found_mn3 = true;
             }
           } else {
@@ -796,7 +796,7 @@ int msn_ExtractZipFile(const std::filesystem::path &zipfilename, const std::file
       }
 
     } else {
-      LOG_WARNING.printf("Unsupported compression for file (%s)", ze->name);
+      LOG_WARNING.printf("Unsupported compression for file (%s)", ze->name.get());
       console.puts(GR_GREEN, "Unsupported compression!!");
     }
 
