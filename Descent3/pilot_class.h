@@ -87,6 +87,8 @@
 #ifndef __PILOT_CLASS_H_
 #define __PILOT_CLASS_H_
 
+#include <memory>
+
 #include "pstypes.h"
 #include "controls.h"
 #include "controller.h"
@@ -275,14 +277,14 @@ private:
   //--- Pilot data				---//
   //--- Try to preserve alignment	---//
   std::string filename;// filename location of this pilot
-  char *name;          // name of the pilot (used in the game)
-  char *ship_logo;     // ship logo for multiplayer play (filename)
-  char *ship_model;    // what ship does this pilot fly
-  char *audio1_file;   // audio taunt #1 (filename)
-  char *audio2_file;   // audio taunt #2 (filename)
-  char *audio3_file;   // audio taunt #1 (filename)
-  char *audio4_file;   // audio taunt #2 (filename)
-  char *guidebot_name; // guidebot name
+  std::unique_ptr<char[]> name;          // name of the pilot (used in the game)
+  std::unique_ptr<char[]> ship_logo;     // ship logo for multiplayer play (filename)
+  std::unique_ptr<char[]> ship_model;    // what ship does this pilot fly
+  std::unique_ptr<char[]> audio1_file;   // audio taunt #1 (filename)
+  std::unique_ptr<char[]> audio2_file;   // audio taunt #2 (filename)
+  std::unique_ptr<char[]> audio3_file;   // audio taunt #1 (filename)
+  std::unique_ptr<char[]> audio4_file;   // audio taunt #2 (filename)
+  std::unique_ptr<char[]> guidebot_name; // guidebot name
 
   uint16_t picture_id; // pilot picture image id
   uint8_t difficulty;  // difficulty setting for this pilot (DIFFICULTY_*)
@@ -295,7 +297,7 @@ private:
   int game_window_w, game_window_h; // game window size
 
   int num_missions_flown;     // number of mission's flown
-  tMissionData *mission_data; // mission data
+  std::unique_ptr<tMissionData[]> mission_data; // mission data
 
   uint16_t PrimarySelectList[MAX_PRIMARY_WEAPONS];
   uint16_t SecondarySelectList[MAX_SECONDARY_WEAPONS];
