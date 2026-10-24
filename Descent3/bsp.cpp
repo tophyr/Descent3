@@ -133,12 +133,8 @@ int BSPGetMineChecksum() {
 
 // Allocates memory for a bspnode
 // Returns pointer to node
-bspnode *NewBSPNode(void) {
-  bspnode *node;
-
-  if ((node = mem_rmalloc<bspnode>()) == nullptr) {
-    return nullptr;
-  }
+std::unique_ptr<bspnode> NewBSPNode(void) {
+  auto node = std::make_unique<bspnode>();
 
   /* Initialize the node, set its variables to zero */
 
@@ -153,8 +149,6 @@ bspnode *NewBSPNode(void) {
   node->plane.b = 0.0;
   node->plane.c = 0.0;
   node->plane.d = 0.0;
-  node->front = nullptr;
-  node->back = nullptr;
 
   return node;
 }
@@ -163,20 +157,11 @@ bspnode *NewBSPNode(void) {
 // Returns pointer to polygon
 bsppolygon *NewPolygon(int roomnum, int facenum, int numverts) {
   bsppolygon *newpoly;
-  vector *verts;
 
-  newpoly = mem_rmalloc<bsppolygon>();
-
-  if (newpoly == nullptr) {
-    LOG_ERROR << "NewPolygon: Couldn't allocate polygon";
-    return nullptr;
-  }
-
-  verts = mem_rmalloc<vector>(numverts);
-  ASSERT(verts != nullptr);
+  newpoly = new bsppolygon;
 
   newpoly->nv = numverts;
-  newpoly->verts = verts;
+  newpoly->verts = std::make_unique<vector[]>(numverts);
 
   newpoly->roomnum = roomnum;
   newpoly->facenum = facenum;
@@ -207,20 +192,19 @@ void SaveBSPNode(CFILE *outfile, bspnode *node) {
     cf_WriteByte(outfile, node->node_subnum);
 
     // Write out its children
-    SaveBSPNode(outfile, node->front);
-    SaveBSPNode(outfile, node->back);
+    SaveBSPNode(outfile, node->front.get());
+    SaveBSPNode(outfile, node->back.get());
   }
 }
 
 // Loads a bsp node from an open file and recurses with its children
-void LoadBSPNode(CFILE *infile, bspnode **node) {
+void LoadBSPNode(CFILE *infile, std::unique_ptr<bspnode> &node) {
   // Get the node type
   uint8_t type = cf_ReadByte(infile);
 
   // Allocate the node and set its type
-  *node = NewBSPNode();
-  ASSERT(*node);
-  bspnode *localnode = *node;
+  node = NewBSPNode();
+  bspnode *localnode = node.get();
 
   localnode->type = type;
 
@@ -237,8 +221,8 @@ void LoadBSPNode(CFILE *infile, bspnode **node) {
   localnode->node_subnum = cf_ReadByte(infile);
 
   // Recurse to get the children
-  LoadBSPNode(infile, &localnode->front);
-  LoadBSPNode(infile, &localnode->back);
+  LoadBSPNode(infile, localnode->front);
+  LoadBSPNode(infile, localnode->back);
 }
 
 // Frees up a polygon and all the vertices associated with it
@@ -246,11 +230,7 @@ void FreePolygon(bsppolygon *poly) {
   ASSERT(poly != nullptr);
   ASSERT(poly->nv > 2);
 
-  if (poly->nv > 0) {
-    mem_free(poly->verts);
-  }
-
-  mem_free(poly);
+  delete poly;
 }
 
 // Calculates the plane equation for a given polygon
@@ -325,7 +305,8 @@ int SplitPolygon(bspplane *plane, bsppolygon *testpoly, bsppolygon **frontpoly, 
   int numvert, numfront, numback, i, codes[256] = {};
   vector *frontvert[256], *backvert[256], *polyvert[256];
   vector *vertptr1, *vertptr2;
-  vector delta, *newvert[256];
+  vector delta;
+  std::unique_ptr<vector> newvert[256];
   int num_new_verts = 0;
 
   /* Set up the function. Set all counters, variables, lists etc to
@@ -397,7 +378,7 @@ int SplitPolygon(bspplane *plane, bsppolygon *testpoly, bsppolygon **frontpoly, 
 
     vertptr2 = polyvert[(i + 1) % numvert];
     t = dists[i] / (dists[i] - dists[i + 1]);
-    newvert[num_new_verts] = mem_rmalloc<vector>();
+    newvert[num_new_verts] = std::make_unique<vector>();
 
     /* Now we must generate the split point. This is simply
      * an equation in the form Origin + t*Direction
@@ -411,8 +392,8 @@ int SplitPolygon(bspplane *plane, bsppolygon *testpoly, bsppolygon **frontpoly, 
                     if (mag<=BSP_EPSILON)
                             Int3();		*/
 
-    frontvert[numfront++] = newvert[num_new_verts];
-    backvert[numback++] = newvert[num_new_verts];
+    frontvert[numfront++] = newvert[num_new_verts].get();
+    backvert[numback++] = newvert[num_new_verts].get();
     num_new_verts++;
   }
 
@@ -443,9 +424,6 @@ int SplitPolygon(bspplane *plane, bsppolygon *testpoly, bsppolygon **frontpoly, 
     temppoly->roomnum = testpoly->roomnum;
     temppoly->subnum = testpoly->subnum;
   }
-
-  for (i = 0; i < num_new_verts; i++)
-    mem_free(newvert[i]);
 
   return 1;
 }
@@ -532,7 +510,7 @@ int BuildBSPNode(bspnode *tree, listnode **polylist, int numpolys) {
   bsppolygon *partition_poly;
   listnode *lnode = *polylist;
   listnode *next;
-  bspnode *frontnode, *backnode;
+  std::unique_ptr<bspnode> frontnode, backnode;
   listnode *frontlist = nullptr, *backlist = nullptr;
   bspplane partition_plane;
   int numfront = 0, numback = 0, numsplits = 0;
@@ -692,12 +670,12 @@ int BuildBSPNode(bspnode *tree, listnode **polylist, int numpolys) {
       return 0;
     }
 
-    if (!BuildBSPNode((bspnode *)frontnode, &frontlist, numfront)) {
+    if (!BuildBSPNode(frontnode.get(), &frontlist, numfront)) {
       LOG_ERROR << "BuildBSPNode: Error building front node";
       return 0;
     }
 
-    tree->front = frontnode;
+    tree->front = std::move(frontnode);
     DestroyList(&frontlist);
   } else {
     if ((frontnode = NewBSPNode()) == nullptr) {
@@ -705,7 +683,7 @@ int BuildBSPNode(bspnode *tree, listnode **polylist, int numpolys) {
       return 0;
     }
     frontnode->type = BSP_EMPTY_LEAF;
-    tree->front = frontnode;
+    tree->front = std::move(frontnode);
   }
 
   if (backlist != nullptr) {
@@ -714,12 +692,12 @@ int BuildBSPNode(bspnode *tree, listnode **polylist, int numpolys) {
       return 0;
     }
 
-    if (!BuildBSPNode((bspnode *)backnode, &backlist, numback)) {
+    if (!BuildBSPNode(backnode.get(), &backlist, numback)) {
       LOG_ERROR << "BuildBSPNode: Error building back node";
       return 0;
     }
 
-    tree->back = backnode;
+    tree->back = std::move(backnode);
     DestroyList(&backlist);
   } else {
     if ((backnode = NewBSPNode()) == nullptr) {
@@ -728,14 +706,14 @@ int BuildBSPNode(bspnode *tree, listnode **polylist, int numpolys) {
     }
 
     backnode->type = BSP_SOLID_LEAF;
-    tree->back = backnode;
+    tree->back = std::move(backnode);
   }
 
   return 1;
 }
 
 // Releases memory for a bspnode.  This function calls itself recursively
-void DestroyBSPNode(bspnode *node) {
+void DestroyBSPNode(std::unique_ptr<bspnode> &node) {
   if (node->type == BSP_NODE) {
     if (node->front)
       DestroyBSPNode(node->front);
@@ -752,7 +730,7 @@ void DestroyBSPNode(bspnode *node) {
   if (np > 0)
     DestroyList(&node->polylist);
 
-  mem_free(node);
+  node.reset();
 }
 
 // Walks the BSP tree and frees up any nodes/polygons that we might be using
@@ -922,7 +900,7 @@ void BuildBSPTree() {
   LOG_DEBUG.printf("%d polygons added, starting node building...", numpolys);
 
   // Build the BSP tree!
-  BuildBSPNode(MineBSP.root, &MineBSP.polylist, numpolys);
+  BuildBSPNode(MineBSP.root.get(), &MineBSP.polylist, numpolys);
   DestroyList(&MineBSP.polylist);
 
   // Print some stats
@@ -1046,7 +1024,7 @@ void BuildSingleBSPTree(int roomnum) {
   Empty = 0;
 
   // Build the BSP tree!
-  BuildBSPNode(MineBSP.root, &MineBSP.polylist, numpolys);
+  BuildBSPNode(MineBSP.root.get(), &MineBSP.polylist, numpolys);
   DestroyList(&MineBSP.polylist);
 
   // Print some stats
@@ -1156,9 +1134,9 @@ int BSPRayOccluded(vector *line_start, vector *line_end, bspnode *start_node) {
       scalar dist2 = node->plane.a * end.x() + node->plane.b * end.y() + node->plane.c * end.z() + node->plane.d;
 
       if (dist1 >= 0 && dist2 >= 0) {
-        node = (bspnode *)node->front;
+        node = node->front.get();
       } else if (dist1 < 0 && dist2 < 0) {
-        node = (bspnode *)node->back;
+        node = node->back.get();
       } else {
         vector mid, delta;
         float t;
@@ -1176,11 +1154,11 @@ int BSPRayOccluded(vector *line_start, vector *line_end, bspnode *start_node) {
         vector mid2 = mid; //+(delta*BSP_EPSILON);
 
         if (dist1 >= 0.0) {
-          PUSH_BSP_RAY(mid1, end, (bspnode *)node->back);
-          PUSH_BSP_RAY(start, mid2, (bspnode *)node->front);
+          PUSH_BSP_RAY(mid1, end, node->back.get());
+          PUSH_BSP_RAY(start, mid2, node->front.get());
         } else {
-          PUSH_BSP_RAY(mid2, end, (bspnode *)node->front);
-          PUSH_BSP_RAY(start, mid1, (bspnode *)node->back);
+          PUSH_BSP_RAY(mid2, end, node->front.get());
+          PUSH_BSP_RAY(start, mid1, node->back.get());
         }
 
         goto break_out;

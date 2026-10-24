@@ -157,6 +157,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <utility>
 
 #include "levelgoal.h"
 #include "log.h"
@@ -199,7 +200,7 @@ void lgoal::GoalComplete(int handle, bool announce) {
     int y = Game_window_h / 4;
     //		AddPersistentHUDMessage(GOAL_MESSAGE_COLOR,HUD_MSG_PERSISTENT_CENTER,y,GOAL_MESSAGE_TIME,m_completion_message);
     char message[200];
-    snprintf(message, sizeof(message), "%s %s", TXT_COMPLETED_HUD, m_name);
+    snprintf(message, sizeof(message), "%s %s", TXT_COMPLETED_HUD, m_name.get());
     if (Demo_flags == DF_RECORDING) {
       DemoWritePersistantHUDMessage(GOAL_MESSAGE_COLOR, HUD_MSG_PERSISTENT_CENTER, GOAL_MESSAGE_TIME, GOAL_MESSAGE_TIME,
                                     HPF_FADEOUT + HPF_FREESPACE_DRAW, SOUND_GOAL_COMPLETE, message);
@@ -287,11 +288,7 @@ bool lgoal::SetName(int handle, char *name) {
   if (!name)
     return false;
 
-  if (m_name)
-    mem_free(m_name);
-
-  m_name = mem_rmalloc<char>(strlen(name) + 1);
-  strcpy(m_name, name);
+  m_name = mem_strdup_unique(name);
   m_modified = 1;
 
   if (Game_mode & GM_MULTI && Netgame.local_role != LR_CLIENT) {
@@ -319,11 +316,7 @@ bool lgoal::SetCompletionMessage(char *message) {
   if (!message)
     return false;
 
-  if (m_completion_message)
-    mem_free(m_completion_message);
-
-  m_completion_message = mem_rmalloc<char>(strlen(message) + 1);
-  strcpy(m_completion_message, message);
+  m_completion_message = mem_strdup_unique(message);
 
   return true;
 }
@@ -332,11 +325,7 @@ bool lgoal::SetItemName(char *iname) {
   if (!iname)
     return false;
 
-  if (m_item_name)
-    mem_free(m_item_name);
-
-  m_item_name = mem_rmalloc<char>(strlen(iname) + 1);
-  strcpy(m_item_name, iname);
+  m_item_name = mem_strdup_unique(iname);
 
   return true;
 }
@@ -441,11 +430,7 @@ bool lgoal::SetDesc(char *desc) {
   if (!desc)
     return false;
 
-  if (m_desc)
-    mem_free(m_desc);
-
-  m_desc = mem_rmalloc<char>(strlen(desc) + 1);
-  strcpy(m_desc, desc);
+  m_desc = mem_strdup_unique(desc);
 
   return true;
 }
@@ -455,17 +440,17 @@ int lgoal::GetName(char *name, int buffer_size) {
     return 0;
 
   if (buffer_size <= 0)
-    return strlen(m_name);
+    return strlen(m_name.get());
 
   if (m_name == nullptr) {
     name[0] = '\0';
     return 0;
   }
 
-  strncpy(name, m_name, buffer_size);
+  strncpy(name, m_name.get(), buffer_size);
   name[buffer_size - 1] = '\0';
 
-  return strlen(m_name);
+  return strlen(m_name.get());
 }
 
 int lgoal::GetCompletionMessage(char *message, int buffer_size) {
@@ -473,17 +458,17 @@ int lgoal::GetCompletionMessage(char *message, int buffer_size) {
     return 0;
 
   if (buffer_size <= 0)
-    return strlen(m_completion_message);
+    return strlen(m_completion_message.get());
 
   if (m_completion_message == nullptr) {
     message[0] = '\0';
     return 0;
   }
 
-  strncpy(message, m_completion_message, buffer_size);
+  strncpy(message, m_completion_message.get(), buffer_size);
   message[buffer_size - 1] = '\0';
 
-  return strlen(m_completion_message);
+  return strlen(m_completion_message.get());
 }
 
 int lgoal::GetItemName(char *iname, int buffer_size) {
@@ -491,17 +476,17 @@ int lgoal::GetItemName(char *iname, int buffer_size) {
     return 0;
 
   if (buffer_size <= 0)
-    return strlen(m_item_name);
+    return strlen(m_item_name.get());
 
   if (m_item_name == nullptr) {
     iname[0] = '\0';
     return 0;
   }
 
-  strncpy(iname, m_item_name, buffer_size);
+  strncpy(iname, m_item_name.get(), buffer_size);
   iname[buffer_size - 1] = '\0';
 
-  return strlen(m_item_name);
+  return strlen(m_item_name.get());
 }
 
 int lgoal::GetDesc(char *desc, int buffer_size) {
@@ -509,34 +494,25 @@ int lgoal::GetDesc(char *desc, int buffer_size) {
     return 0;
 
   if (buffer_size <= 0)
-    return strlen(m_desc);
+    return strlen(m_desc.get());
 
   if (m_desc == nullptr) {
     desc[0] = '\0';
     return 0;
   }
 
-  strncpy(desc, m_desc, buffer_size);
+  strncpy(desc, m_desc.get(), buffer_size);
   desc[buffer_size - 1] = '\0';
 
-  return strlen(m_desc);
+  return strlen(m_desc.get());
 }
 
 int lgoal::GetNumItems() { return m_num_items; }
 
 void lgoal::Reset(bool f_from_editor) {
-  if (m_name)
-    mem_free(m_name);
-
-  if (m_item_name)
-    mem_free(m_item_name);
-
-  if (m_desc)
-    mem_free(m_desc);
-
-  m_name = nullptr;
-  m_item_name = nullptr;
-  m_desc = nullptr;
+  m_name.reset();
+  m_item_name.reset();
+  m_desc.reset();
   m_num_items = 0;
   m_priority = 0;
   m_g_list = 0;
@@ -633,7 +609,7 @@ bool levelgoals::DeleteGoal(int index) {
   m_goal[index].Reset(false);
 
   for (i = index; i < m_num_goals - 1; i++) {
-    m_goal[i] = m_goal[i + 1];
+    m_goal[i] = std::move(m_goal[i + 1]);
   }
 
   m_num_goals--;
