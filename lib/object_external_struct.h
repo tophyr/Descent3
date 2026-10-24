@@ -92,6 +92,7 @@
  */
 
 #include <cstdint>
+#include <memory>
 
 #include "vecmat_external.h"
 #include "robotfirestruct.h"
@@ -404,7 +405,7 @@ struct object {
   uint16_t id;        // which form of object...which powerup, robot, etc.
   uint32_t flags;
 
-  char *name; // the name of this object, or NULL
+  std::unique_ptr<char[]> name; // the name of this object, or NULL
 
   int32_t handle;       //  unique handle for this object.  See defines above
   int16_t next, prev;   // id of next and previous connected object in Objects, -1 = no connection
@@ -441,7 +442,7 @@ struct object {
 
   int32_t attach_ultimate_handle;
   int32_t attach_parent_handle;
-  int32_t *attach_children;   // List of object handles for connected children
+  std::unique_ptr<int32_t[]> attach_children; // List of object handles for connected children
 
   uint8_t weapon_fire_flags;  // Used to indicate special weapon effects.  See flags above.
 
@@ -463,7 +464,7 @@ struct object {
   vector min_xyz, max_xyz; // the current min & max extents of this object's sphere
 
   // Current weapon battery info for this object
-  dynamic_wb_info *dynamic_wb;
+  std::unique_ptr<dynamic_wb_info[]> dynamic_wb;
 
   // Explosion information
   float impact_size;
@@ -492,7 +493,7 @@ struct object {
     soundsource_info_s soundsource_info;
   } ctype;
 
-  ai_frame *ai_info; // AI information pointer
+  std::unique_ptr<ai_frame> ai_info; // AI information pointer
 
   // Render info, determined by RENDER_TYPE
   union {
@@ -504,18 +505,18 @@ struct object {
     ddgr_color sphere_color;  // for RT_EDITOR_SPHERE
   } rtype;
 
-  effect_info_s *effect_info;
-  light_info *lighting_info;  // Pointer to lighting info, or NULL if inherits from type
+  std::unique_ptr<effect_info_s> effect_info;
+  std::unique_ptr<light_info> lighting_info; // Pointer to lighting info, or NULL if inherits from type
 
   // Something to do with multiplayer, possibly, but it's hard to know for sure
   // because some people are incapable of commented their code.
   uint16_t position_counter;
 
   // OSIRIS Script Info (new OSIRIS)
-  tOSIRISScript *osiris_script;
+  std::unique_ptr<tOSIRISScript> osiris_script;
 
-  char *custom_default_script_name;
-  char *custom_default_module_name;
+  std::unique_ptr<char[]> custom_default_script_name;
+  std::unique_ptr<char[]> custom_default_module_name;
 };
 
 #endif
