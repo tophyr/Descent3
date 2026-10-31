@@ -20,6 +20,7 @@
 //
 #include <cfloat>
 #include <cstdint>
+#include <memory>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1839,20 +1840,12 @@ bool SuperThief::DoSteal(int me, int it) {
   ;
   int i;
   int count_max, count_num;
-  bool *attempted_steals;
-
-  attempted_steals = (bool *)malloc(numSuperThiefableItems * sizeof(bool));
-  if (!attempted_steals)
-    return false;
+  auto attempted_steals = std::make_unique<bool[]>(numSuperThiefableItems);
 
   float ftime = Game_GetFrameTime();
   if (ftime == 0)
     ftime = 1.0f;
   srand(Game_GetTime() / ftime);
-
-  for (i = 0; i < numSuperThiefableItems; i++) {
-    attempted_steals[i] = false;
-  }
 
   while (max_tries--) {
     i = rand() % numSuperThiefableItems;
@@ -1960,13 +1953,11 @@ bool SuperThief::DoSteal(int me, int it) {
 
       Player_Value(it, VF_SET, PLYSV_I_WEAPON, &amount, SuperThiefableItems[i].index);
 
-      free(attempted_steals);
       return true;
     }
   }
 
   mprintf(0, "Super Thief: Not taking anything\n");
-  free(attempted_steals);
   return false; // we didn't take anything this try
 }
 
@@ -6201,20 +6192,12 @@ bool Thief::DoSteal(int me, int it, int attempt_num, bool f_last_success) {
   ;
   int i;
   int count_max, count_num;
-  bool *attempted_steals;
-
-  attempted_steals = (bool *)malloc(numThiefableItems * sizeof(bool));
-  if (!attempted_steals)
-    return false;
+  auto attempted_steals = std::make_unique<bool[]>(numThiefableItems);
 
   float ftime = Game_GetFrameTime();
   if (ftime == 0)
     ftime = 1.0f;
   srand(Game_GetTime() / ftime);
-
-  for (i = 0; i < numThiefableItems; i++) {
-    attempted_steals[i] = false;
-  }
 
   while (max_tries--) {
     i = rand() % numThiefableItems;
@@ -6365,13 +6348,11 @@ bool Thief::DoSteal(int me, int it, int attempt_num, bool f_last_success) {
         break;
       }
 
-      free(attempted_steals);
       return true;
     }
   }
 
   mprintf(0, "THIEF: Not taking anything\n");
-  free(attempted_steals);
   return false; // we didn't take anything this try
 }
 
@@ -7481,20 +7462,12 @@ bool OldScratch::DoSteal(int me, int it) {
   ;
   int i;
   int count_max;
-  bool *attempted_steals;
-
-  attempted_steals = (bool *)malloc(numSuperThiefableItems * sizeof(bool));
-  if (!attempted_steals)
-    return false;
+  auto attempted_steals = std::make_unique<bool[]>(numSuperThiefableItems);
 
   float ftime = Game_GetFrameTime();
   if (ftime == 0)
     ftime = 1.0f;
   srand(Game_GetTime() / ftime);
-
-  for (i = 0; i < numSuperThiefableItems; i++) {
-    attempted_steals[i] = false;
-  }
 
   while (max_tries--) {
     i = rand() % numSuperThiefableItems;
@@ -7596,13 +7569,11 @@ bool OldScratch::DoSteal(int me, int it) {
 
       Player_Value(it, VF_SET, PLYSV_I_WEAPON, &amount, SuperThiefableItems[i].index);
 
-      free(attempted_steals);
       return true;
     }
   }
 
   mprintf(0, "Super Thief: Not taking anything\n");
-  free(attempted_steals);
   return false; // we didn't take anything this try
 }
 
