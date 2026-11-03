@@ -13,3 +13,7 @@ target_link_libraries(win32 PRIVATE
   ddio
   logger
 )
+
+if(BUILD_TESTING)
+  add_subdirectory(tests)
+endif()
