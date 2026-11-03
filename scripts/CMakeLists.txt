@@ -75,6 +75,10 @@ set_target_properties(dallas PROPERTIES PREFIX "")
 set_target_properties(dallas PROPERTIES CXX_VISIBILITY_PRESET "hidden")
 target_link_libraries(dallas fix misc)
 
+if(BUILD_TESTING)
+  add_subdirectory(tests)
+endif()
+
 foreach(SCRIPT ${SCRIPTS})
   add_library(${SCRIPT} MODULE ${CPPS} ${HEADERS} "${SCRIPT}.cpp")
   target_link_libraries(${SCRIPT}
