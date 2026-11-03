@@ -4,6 +4,7 @@ add_executable(
   md5_tests
   ../md5.cpp
   md5_tests.cpp
+  support/digest.cpp
 )
 target_link_libraries(
   md5_tests
