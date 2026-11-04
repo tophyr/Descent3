@@ -1,0 +1,43 @@
+# Vendored copy of libacm. tools/vendor.py and third_party/README.md describe
+# this file.
+
+url = "https://github.com/markokr/libacm"
+# "decode: remove precalculated tables" (2024-04-28). Descent 3 commit
+# 90f00b9e ("Update libacm to latest upstream code") imported decode.c and
+# libacm.h byte for byte from this commit. The patches are the later Descent 3
+# changes to these files.
+commit = "110a8a03806c2a4e00b772a32f17b7207060000f"
+license_file = "decode.c"
+local_files = ["CMakeLists.txt"]
+patches = [
+  "0001-use-uint32-t.patch",
+  "0002-use-uint8-t.patch",
+  "0003-use-uint16-t.patch",
+  "0004-include-stdint-h.patch",
+  "0005-struct-tags.patch",
+]
+
+# Upstream path = local path, relative to this directory.
+[files]
+"src/decode.c" = "decode.c"
+"src/libacm.h" = "libacm.h"
+
+[doc]
+title = "libacm"
+summary = "libacm - library for InterPlay ACM Audio format."
+license = "The libacm core code is licensed under minimal BSD/ISC license."
+license_text = '''
+Copyright (c) 2004-2010, Marko Kreen
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+'''

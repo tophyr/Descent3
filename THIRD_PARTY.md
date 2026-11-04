@@ -3,12 +3,24 @@
 This file contains information about third party components that are required
 for building Descent 3.
 
+<!-- BEGIN sections generated from UPSTREAM.toml files by tools/vendor.py docs -->
+
 ## libacm
 
 libacm - library for InterPlay ACM Audio format. https://github.com/markokr/libacm
 
+[@110a8a03](https://github.com/markokr/libacm/tree/110a8a03806c2a4e00b772a32f17b7207060000f)
+
 * third_party/libacm/decode.c
 * third_party/libacm/libacm.h
+
+Changes made in Descent 3 are kept as patches in third_party/libacm/patches/:
+
+* 0001-use-uint32-t.patch
+* 0002-use-uint8-t.patch
+* 0003-use-uint16-t.patch
+* 0004-include-stdint-h.patch
+* 0005-struct-tags.patch
 
 The libacm core code is licensed under minimal BSD/ISC license.
 
@@ -28,7 +40,7 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ```
 
-<!-- BEGIN sections generated from UPSTREAM.toml files by tools/vendor.py docs -->
+The license text is also in third_party/libacm/decode.c.
 
 ## libmve
 
