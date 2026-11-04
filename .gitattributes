@@ -64,3 +64,7 @@
 # Original-release sources used as test data: shown as vendored code.
 # Their line endings may be normalized; the data check ignores whitespace.
 tests/osiris_sandbox/data/level1/** linguist-vendored
+
+# Patches to vendored code (third_party/README.md) are applied byte for byte,
+# so git must not convert their line endings.
+**/patches/*.patch -text
