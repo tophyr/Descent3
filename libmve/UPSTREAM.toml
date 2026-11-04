@@ -1,0 +1,50 @@
+# Origin of libmve. tools/vendor.py and third_party/README.md describe this
+# file.
+#
+# libmve is a fork: the files were renamed from .c to .cpp and largely
+# rewritten after the import (Descent 3 commits ef60434f and later), so they
+# are not compared with upstream and have no patches. tools/vendor.py check
+# confirms that the commit and the upstream paths exist and that the local
+# file list is complete.
+
+fork = true
+url = "https://github.com/btb/d2x"
+commit = "c030c4531ad19f1658ea9635ff4ee6861e1d15e0"
+local_files = [
+  "CMakeLists.txt",
+  "movie_sound.cpp",
+  "movie_sound.h",
+  "sound_interface.h",
+]
+
+# Upstream path = local path, relative to this directory.
+[files]
+"libmve/decoder8.c" = "decoder8.cpp"
+"libmve/decoder16.c" = "decoder16.cpp"
+"libmve/decoders.h" = "decoders.h"
+"libmve/mve_audio.c" = "mve_audio.cpp"
+"libmve/mve_audio.h" = "mve_audio.h"
+"libmve/mvelib.c" = "mvelib.cpp"
+"libmve/mvelib.h" = "mvelib.h"
+"libmve/mveplay.c" = "mveplay.cpp"
+
+[doc]
+title = "libmve"
+summary = "libmve - Interplay MVE implementation from D2X project."
+license = "The libmve code is licensed under GPL-3 license."
+license_text = '''
+Copyright (C) 2002-2024 D2X Project
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+'''
