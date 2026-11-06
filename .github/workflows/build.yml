@@ -56,6 +56,9 @@ jobs:
       # Debug builds use the mock clock. They are only built and tested, never installed, signed or uploaded.
       MOCK_CLOCK: ${{ matrix.build_type == 'Debug' && 'ON' || 'OFF' }}
       MACOS_AND_CODE_SIGNING: ${{ matrix.os.preset == 'mac' && matrix.build_type != 'Debug' && secrets.MACOS_SIGNING_IDENTITY != '' }}
+      # vcpkg stores the packages it builds in vcpkg-binary-cache, which is saved with actions/cache.
+      # Setting this also stops run-vcpkg from selecting the x-gha backend, which vcpkg has removed.
+      VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/vcpkg-binary-cache,readwrite
 
     steps:
       - uses: actions/checkout@v4
@@ -70,11 +73,23 @@ jobs:
         if: ${{ matrix.os.preset == 'mac' }}
         run: brew bundle install
 
+      # The Ubuntu mirror the runners use sometimes serves packages at about 35 kB/s, which turns a
+      # 3 second download into 8 minutes. Downloaded packages are kept in apt-archives and cached, so
+      # a cache hit downloads only the package index.
+      - name: Restore apt package cache
+        id: apt-cache
+        if: ${{ startsWith(matrix.os.runner, 'ubuntu-') }}
+        uses: actions/cache/restore@v6
+        with:
+          path: apt-archives/*.deb
+          key: apt-${{ matrix.os.runner }}-${{ matrix.os.preset }}
+          restore-keys: apt-${{ matrix.os.runner }}-${{ matrix.os.preset }}-
+
       - name: Install Linux dependencies
         if: ${{ startsWith(matrix.os.runner, 'ubuntu-') }}
         run: |
-          sudo apt update
-          sudo apt install -y --no-install-recommends \
+          sudo apt-get update
+          sudo apt-get install -o Dir::Cache::Archives="$PWD/apt-archives" -y --no-install-recommends \
             ninja-build g++ python3 curl pkg-config autoconf autoconf-archive automake libtool libltdl-dev make python3-jinja2 libx11-dev libxft-dev libxext-dev libwayland-dev libxkbcommon-dev libegl1-mesa-dev libibus-1.0-dev libasound2-dev libpulse-dev libaudio-dev libjack-dev libsndio-dev libxcursor-dev libxfixes-dev libxi-dev libxrandr-dev libxss-dev
 
       - name: Setup cmake
@@ -87,8 +102,24 @@ jobs:
       - name: Install Linux Cross-compilation dependencies
         if: ${{ matrix.os.preset == 'linux-cross-arm64' }}
         run: |
-          sudo apt install -y --no-install-recommends \
+          sudo apt-get install -o Dir::Cache::Archives="$PWD/apt-archives" -y --no-install-recommends \
             gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu g++-aarch64-linux-gnu
+
+      # autoclean deletes packages that the current index no longer offers, so superseded versions
+      # do not pile up in the cache. apt leaves a lock file and a partial/ directory that only root
+      # can read, which would make the cache save fail.
+      - name: Prune apt package cache
+        if: ${{ startsWith(matrix.os.runner, 'ubuntu-') }}
+        run: |
+          sudo apt-get -o Dir::Cache::Archives="$PWD/apt-archives" autoclean
+          sudo rm -rf apt-archives/partial apt-archives/lock
+
+      - name: Save apt package cache
+        if: ${{ startsWith(matrix.os.runner, 'ubuntu-') && hashFiles('apt-archives/*.deb') != '' && steps.apt-cache.outputs.cache-matched-key != format('apt-{0}-{1}-{2}', matrix.os.runner, matrix.os.preset, hashFiles('apt-archives/*.deb')) }}
+        uses: actions/cache/save@v6
+        with:
+          path: apt-archives/*.deb
+          key: apt-${{ matrix.os.runner }}-${{ matrix.os.preset }}-${{ hashFiles('apt-archives/*.deb') }}
 
       - name: Install Windows dependencies
         if: ${{ startsWith(matrix.os.runner, 'windows-') }}
@@ -102,6 +133,16 @@ jobs:
       - uses: lukka/run-vcpkg@v11
         with:
           vcpkgJsonGlob: vcpkg.json
+
+      # The key never matches exactly, so this restores the most recent cache for the preset. The
+      # Debug and Release jobs build the same packages and share it.
+      - name: Restore vcpkg binary cache
+        id: vcpkg-cache
+        uses: actions/cache/restore@v6
+        with:
+          path: vcpkg-binary-cache
+          key: vcpkg-${{ matrix.os.preset }}
+          restore-keys: vcpkg-${{ matrix.os.preset }}-
 
       - name: Configure cross-compiled build
         if: ${{ matrix.os.preset == 'linux-cross-arm64' }}
@@ -131,6 +172,22 @@ jobs:
           CXX: ${{ matrix.os.cxx }}
         # Only pass the signing identity when the certificate was imported above, otherwise the post-build codesign calls fail.
         run: cmake --preset ${{ matrix.os.preset }} -DCODESIGN_IDENTITY=${{ env.MACOS_AND_CODE_SIGNING == 'true' && secrets.MACOS_SIGNING_IDENTITY || '' }} -DENABLE_MOCK_CLOCK=${{ env.MOCK_CLOCK }} -DBUILD_TESTING=ON -DENABLE_LOGGER=ON -DFORCE_PORTABLE_INSTALL=ON -DBUILD_EDITOR=ON -DUSE_EXTERNAL_PLOG=ON
+
+      # Deletes archives that no installed package uses, so the cache does not keep growing as
+      # compilers and ports change. Only runs after a successful configure: after a failure some
+      # packages are not installed yet, and their archives would be deleted.
+      - name: Prune vcpkg binary cache
+        run: cmake -DCACHE_DIR=vcpkg-binary-cache -DBUILD_ROOT=builds -P .github/prune-vcpkg-cache.cmake
+
+      # Archive names are vcpkg ABI hashes, so the directory only changes when vcpkg built something
+      # it could not restore. Saving runs after a failed configure too, to keep the packages that did
+      # build.
+      - name: Save vcpkg binary cache
+        if: ${{ !cancelled() && hashFiles('vcpkg-binary-cache/**') != '' && steps.vcpkg-cache.outputs.cache-matched-key != format('vcpkg-{0}-{1}', matrix.os.preset, hashFiles('vcpkg-binary-cache/**')) }}
+        uses: actions/cache/save@v6
+        with:
+          path: vcpkg-binary-cache
+          key: vcpkg-${{ matrix.os.preset }}-${{ hashFiles('vcpkg-binary-cache/**') }}
 
       - name: Build ${{ matrix.build_type }}
         run: cmake --build --preset ${{ matrix.os.preset }} --config ${{ matrix.build_type }} --verbose
