@@ -1,0 +1,55 @@
+name: x86 sandbox generated code
+
+# x86sandbox/generated is checked in. This regenerates it from the guest sources
+# with the compiler it was made with, and fails if the result differs.
+
+on:
+  push:
+    paths:
+      - 'x86sandbox/**'
+      - 'third_party/tiny386/**'
+      - 'third_party/wasm2c/**'
+      - '.github/workflows/x86sandbox-generated.yml'
+  pull_request:
+    paths:
+      - 'x86sandbox/**'
+      - 'third_party/tiny386/**'
+      - 'third_party/wasm2c/**'
+      - '.github/workflows/x86sandbox-generated.yml'
+
+jobs:
+  check:
+    name: Check x86sandbox/generated
+    # Ubuntu 24.04's clang-18 is the compiler named in x86sandbox/generated/README.txt.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      # The Ubuntu mirror the runners use is sometimes very slow, so downloaded packages are cached.
+      # build.yml explains the steps in more detail.
+      - name: Restore apt package cache
+        id: apt-cache
+        uses: actions/cache/restore@v6
+        with:
+          path: apt-archives/*.deb
+          key: apt-x86sandbox-ubuntu-24.04
+          restore-keys: apt-x86sandbox-ubuntu-24.04-
+
+      - name: Install clang 18, lld 18 and OpenSSL
+        run: |
+          # apt fails if the archives directory has no partial/ subdirectory, which is the case on a cache miss.
+          mkdir -p apt-archives/partial
+          sudo apt-get update -qq
+          sudo apt-get install -o Dir::Cache::Archives="$PWD/apt-archives" -qq --no-install-recommends clang-18 lld-18 cmake libssl-dev
+          sudo apt-get -o Dir::Cache::Archives="$PWD/apt-archives" autoclean
+          sudo rm -rf apt-archives/partial apt-archives/lock
+
+      - name: Save apt package cache
+        if: ${{ hashFiles('apt-archives/*.deb') != '' && steps.apt-cache.outputs.cache-matched-key != format('apt-x86sandbox-ubuntu-24.04-{0}', hashFiles('apt-archives/*.deb')) }}
+        uses: actions/cache/save@v6
+        with:
+          path: apt-archives/*.deb
+          key: apt-x86sandbox-ubuntu-24.04-${{ hashFiles('apt-archives/*.deb') }}
+
+      - name: Regenerate and compare
+        run: CLANG=clang-18 WASM_LD=wasm-ld-18 x86sandbox/check_generated.sh
