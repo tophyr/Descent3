@@ -274,3 +274,25 @@ TEST_F(GrfontTest, SetTemplateRoundTripsThroughLoadTemplate) {
   EXPECT_EQ(grfont_GetKernedSpacingTemp(&back, 'A', 'V'), 0);
   grfont_FreeTemplate(&back);
 }
+
+TEST(GrfontDeathTest, LoadRejectsFileWithoutFontMagicInsteadOfCrashing) {
+  std::filesystem::path dir = std::filesystem::temp_directory_path() / "grtext_tests_bad_magic";
+  std::filesystem::create_directories(dir);
+  {
+    FILE *fp = fopen((dir / "notafont.fnt").u8string().c_str(), "wb");
+    ASSERT_NE(fp, nullptr);
+    const char junk[] = "this is not a font file, just some text padding it out to a header's length....";
+    fwrite(junk, 1, sizeof(junk), fp);
+    fclose(fp);
+  }
+  EXPECT_EXIT(
+      {
+        cf_SetSearchPath(dir);
+        grfont_Reset();
+        grfont_Load("notafont.fnt");
+        std::exit(0);
+      },
+      ::testing::ExitedWithCode(0), "");
+  std::error_code ec;
+  std::filesystem::remove_all(dir, ec);
+}
