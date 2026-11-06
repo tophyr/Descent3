@@ -28,4 +28,24 @@
 
 namespace {
 
+TEST(DdgrDxTest, ClearFillsExactlyTheRequestedRect) {
+  const int W = 8, H = 6;
+  const int L = 1, T = 1, CW = 5, CH = 4;
+  const uint32_t sentinel = 0x00a5a5a5;
+  const ddgr_color color = 0x00404040;
+
+  DxSurface sf(W, H);
+  ASSERT_TRUE(sf.valid());
+  sf.fill(sentinel);
+
+  ddgr_dx_surf_Clear(sf.get(), color, L, T, CW, CH);
+
+  for (int y = 0; y < H; y++) {
+    for (int x = 0; x < W; x++) {
+      const bool inside = x >= L && x < L + CW && y >= T && y < T + CH;
+      EXPECT_EQ(sf.get(x, y), inside ? color : sentinel) << "at (" << x << "," << y << ")";
+    }
+  }
+}
+
 } // namespace
