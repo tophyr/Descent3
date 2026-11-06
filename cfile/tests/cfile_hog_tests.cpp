@@ -301,3 +301,7 @@ TEST_F(CFileHogTest, LibraryThatFailedToOpenIsNotSearched) {
     cfclose(cf);
   cf_CloseLibrary(0);
 }
+
+TEST(CFileHogDeathTest, EmptyLibraryLookupFindsNothingWithoutCrashing) {
+  EXPECT_EXIT(std::exit(LookupWithEmptyHogOpen()), ::testing::ExitedWithCode(0), "");
+}
