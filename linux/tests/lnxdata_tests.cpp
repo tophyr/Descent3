@@ -125,6 +125,23 @@ TEST_F(AppDatabaseTest, DatabaseConstructedFromParentSeesParentsUnsavedWrites) {
   EXPECT_STREQ(buf, "Hotshot");
 }
 
+TEST_F(AppDatabaseTest, StringReadDoesNotWritePastCallerSuppliedCapacity) {
+  oeLnxAppDatabase db;
+  ASSERT_TRUE(db.create_record("Descent3"));
+  const char *value = "a value much longer than eight bytes";
+  ASSERT_TRUE(db.write("long", value, static_cast<int>(strlen(value) + 1)));
+
+  char buf[64];
+  memset(buf, 'X', sizeof(buf));
+  const int capacity = 8;
+  int len = capacity;
+  db.read("long", buf, &len);
+
+  for (size_t i = capacity; i < sizeof(buf); i++) {
+    ASSERT_EQ(buf[i], 'X') << "byte " << i << " beyond the declared capacity of " << capacity << " was written";
+  }
+}
+
 TEST_F(AppDatabaseTest, StringReadSucceedsWhenValueAndTerminatorExactlyFillCapacity) {
   oeLnxAppDatabase db;
   ASSERT_TRUE(db.create_record("Descent3"));
