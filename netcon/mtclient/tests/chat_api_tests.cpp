@@ -256,6 +256,24 @@ TEST_F(ChatApi, WhoisReportsUsersChannel) {
   EXPECT_STREQ(chan, "#lobby");
 }
 
+TEST_F(ChatApi, WhoisWithoutChannelReportsStarEvenAfterAnEarlierLookup) {
+  GetChannelByUser("bob");
+  Remote(":irc.example 319 me bob :#lobby");
+  Remote(":irc.example 318 me bob :End of /WHOIS list.");
+  const char *chan = GetChannelByUser("bob");
+  ASSERT_NE(chan, nullptr);
+  ASSERT_NE(chan, (char *)-1);
+  ASSERT_STREQ(chan, "#lobby");
+
+  GetChannelByUser("carol");
+  Remote(":irc.example 311 me carol ~user host.example * :7654321");
+  Remote(":irc.example 318 me carol :End of /WHOIS list.");
+  chan = GetChannelByUser("carol");
+  ASSERT_NE(chan, nullptr);
+  ASSERT_NE(chan, (char *)-1);
+  EXPECT_STREQ(chan, "*");
+}
+
 TEST_F(ChatApi, ChannelListCollectsEntriesBetweenStartAndEnd) {
   Remote(":irc.example 321 me Channel :Users  Name");
   Remote(":irc.example 322 me #lobby 5 :General chat for everyone");
