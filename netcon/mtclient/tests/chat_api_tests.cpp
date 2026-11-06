@@ -172,6 +172,12 @@ TEST_F(ChatApi, QuitRemovesTheUser) {
   EXPECT_EQ(Users(), Names({"bob"}));
 }
 
+TEST_F(ChatApi, KickRemovesTheKickedUserNotTheKicker) {
+  Remote(":irc.example 353 me = #lobby :me op victim");
+  Remote(":op!o@h KICK #lobby victim :behave");
+  EXPECT_EQ(Users(), Names({"me", "op"}));
+}
+
 TEST_F(ChatApi, BeingKickedNotifiesAndClearsTheUserList) {
   Remote(":irc.example 353 me = #lobby :me op alice");
   DrainCommands();
