@@ -138,4 +138,13 @@ TEST_F(AppDatabaseTest, StringReadSucceedsWhenValueAndTerminatorExactlyFillCapac
   EXPECT_EQ(len, 7);
 }
 
+TEST_F(AppDatabaseTest, GetUserNameFillsTheBuffer) {
+  oeLnxAppDatabase db;
+  char buf[256] = {};
+  size_t size = sizeof(buf);
+  db.get_user_name(buf, &size);
+
+  EXPECT_GT(strlen(buf), 0u);
+}
+
 } // namespace
