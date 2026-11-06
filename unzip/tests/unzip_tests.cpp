@@ -293,6 +293,44 @@ TEST_F(UnzipTest, ReadFileOfEmptyDeflatedEntrySucceeds) {
   EXPECT_EQ(rc, 0);
 }
 
+TEST_F(UnzipTest, ExtractFileOfEmptyDeflatedEntryCreatesEmptyFile) {
+  OpenArchive(zip_, dir_, BuildZip({Deflated("empty.txt", {})}));
+  zipentry *ent = NextEntry(zip_, "empty.txt");
+  ASSERT_NE(ent, nullptr);
+
+  const std::string out = dir_.PathFor("empty.out");
+  EXPECT_EQ(zip_.ExtractFile(ent, out.c_str()), 0);
+  EXPECT_TRUE(std::filesystem::exists(out));
+  EXPECT_EQ(std::filesystem::file_size(out), 0u);
+}
+
+TEST_F(UnzipTest, ExtractFileHandlesStreamEndInFinalInputChunk) {
+  const Bytes data = RandomBytes(1019, 99);
+  Bytes stream;
+  stream.push_back(0x00); // BFINAL=0, BTYPE=00 (stored), padded to byte boundary
+  Put16(stream, static_cast<uint16_t>(data.size()));
+  Put16(stream, static_cast<uint16_t>(~data.size()));
+  PutBytes(stream, data);
+  stream.push_back(0x03); // BFINAL=1, BTYPE=01 (fixed), end-of-block code
+  stream.push_back(0x00);
+  ASSERT_EQ(stream.size(), 1026u);
+
+  Entry e = Deflated("data.bin", data);
+  e.payload = stream;
+  e.payload_set = true;
+  OpenArchive(zip_, dir_, BuildZip({e}));
+  zipentry *ent = NextEntry(zip_, "data.bin");
+  ASSERT_NE(ent, nullptr);
+
+  int rc = -100;
+  EXPECT_EQ(AsBytes(ReadIntoMemory(zip_, ent, &rc)), data);
+  EXPECT_EQ(rc, 0);
+
+  const std::string out = dir_.PathFor("data.out");
+  EXPECT_EQ(zip_.ExtractFile(ent, out.c_str()), 0);
+  EXPECT_TRUE(ReadWholeFile(out) == data);
+}
+
 TEST_F(UnzipTest, OperationsFailWhenNoArchiveIsOpen) {
   zipentry ent{};
   ent.compression_method = kMethodStored;
