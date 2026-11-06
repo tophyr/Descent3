@@ -123,6 +123,30 @@ TEST_F(ImageLoaderTest, UnsupportedTgaVariantsAreRejectedWithoutAllocating) {
   EXPECT_EQ(UsedSlots(), before);
 }
 
+TEST_F(ImageLoaderTest, TruncatedOgfFailsWithoutLeakingABitmap) {
+  ByteWriter ogf;
+  ogf.u8(0).u8(0).u8(OUTRAGE_1555_COMPRESSED_MIPPED);
+  ogf.str("truncated.ogf").u8(0); // name
+  ogf.u8(1);                      // one mip level
+  ogf.fill(9, 0);
+  ogf.u16le(4).u16le(4); // 4x4 = 16 pixels
+  ogf.u8(32).u8(8 + 32);
+  ogf.u8(0).u16le(Rgb1555(1, 1, 1)); // a single raw pixel, then the file ends
+
+  const std::set<int> before = UsedSlots();
+  EXPECT_EQ(Track(LoadFromBytes(temp_dir, ogf.bytes, LoadTga1555)), -1);
+
+  const std::set<int> after = UsedSlots();
+  int leaked = 0;
+  for (int slot : after) {
+    if (!before.count(slot)) {
+      leaked++;
+      Track(slot); // free it so later tests are unaffected
+    }
+  }
+  EXPECT_EQ(leaked, 0);
+}
+
 const std::vector<Rgb> kPalette = {
     {0, 0, 0},       // 0: transparent by convention
     {255, 0, 0},     // 1
