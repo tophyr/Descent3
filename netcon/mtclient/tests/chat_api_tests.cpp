@@ -222,6 +222,16 @@ TEST_F(ChatApi, NickInUsePicksADifferentNickEachTime) {
   EXPECT_EQ(second.rfind("me", 0), 0u) << second;
 }
 
+TEST_F(ChatApi, NickInUseRetryNickHasNoSpaces) {
+  char nick[] = "Big Pilot";
+  char tid[] = "1234";
+  ASSERT_EQ(ConnectToChatServer("irc.invalid", 0, nick, tid), -1);
+  ASSERT_STREQ(Nick_name, "Big_Pilot");
+
+  Remote(":irc.example 433 * Big_Pilot :Nickname is already in use");
+  EXPECT_EQ(strchr(Nick_name, ' '), nullptr) << "retry nick: \"" << Nick_name << "\"";
+}
+
 TEST_F(ChatApi, BadNickDisconnects) {
   EXPECT_TRUE(Remote(":irc.example 432 * b@d :Erroneous nickname"));
   EXPECT_TRUE(HasCommand(DrainCommands(), CC_DISCONNECTED));
