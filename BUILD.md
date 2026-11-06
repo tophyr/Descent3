@@ -13,7 +13,7 @@ The build process uses [**CMake**](https://cmake.org/) and, by default, [**Ninja
 You can supply these dependencies yourself via your system's library management tools, or the build system can locate the dependencies for you using [vcpkg](https://github.com/microsoft/vcpkg), a cross-platform dependency-management system developed by Microsoft. The official builds source their dependencies from vcpkg.
 
 ## Platforms tested in CI
-Every pull request to `main` and every push to `main` is built in Debug and Release on the following platforms. The unit tests run on all of them except the ARM64 cross-compile.
+Every pull request to `main` and every push to `main` is built in Debug and Release on the following platforms. The unit tests run on all of them except the ARM64 cross-compile. See [Running the tests](#running-the-tests).
 
 | Platform | CI runner | Compiler |
 |---|---|---|
@@ -195,6 +195,45 @@ cd build-cross
 cmake -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/MyToolChain.cmake -DHogMaker_DIR=../build-native/ ..
 cmake --build .
 ```
+
+## Running the tests
+
+The unit tests use [GoogleTest](https://github.com/google/googletest) and are run with [CTest](https://cmake.org/cmake/help/latest/manual/ctest.1.html). They are only built when the `BUILD_TESTING` option is on. vcpkg installs GoogleTest along with the other dependencies; if you manage the dependencies yourself, install it as well.
+
+1. **Configure with testing enabled**, using the preset for your platform (`win`, `mac` or `linux`):
+
+    ```sh
+    cmake --preset linux -DBUILD_TESTING=ON
+    ```
+
+2. **Build.**
+
+    ```sh
+    cmake --build --preset linux --config [Debug|Release]
+    ```
+
+3. **Run every test.**
+
+    ```sh
+    ctest --preset linux -C [Debug|Release]
+    ```
+
+Each GoogleTest case is registered as its own CTest test, named `Suite.Test`. Some useful `ctest` options:
+- `--output-on-failure` prints the output of the tests that fail.
+- `-j <N>` runs up to N tests in parallel.
+- `-R <regex>` runs only the tests whose names match, for example `ctest --preset linux -C Debug -R CFile`.
+
+The test executables are put in a `tests` directory under their module's build directory, for example `builds/linux/cfile/tests/Debug/cfile_tests`. You can also run one directly, and pass it GoogleTest options such as `--gtest_filter=<pattern>`.
+
+### Matching CI
+
+CI configures with `-DBUILD_TESTING=ON -DENABLE_LOGGER=ON -DUSE_EXTERNAL_PLOG=ON -DBUILD_EDITOR=ON`, adds `-DENABLE_MOCK_CLOCK=ON` to Debug builds, and runs `ctest` on both the Debug and the Release build. To reproduce a CI failure locally, use the same options and configuration. Release builds compile out assertions, so a test can behave differently in Debug and in Release.
+
+Tests of code that is only built on some platforms, or only with `BUILD_EDITOR=ON`, are only built and run there too. The editor is Windows-only, so its tests only run on Windows with `BUILD_EDITOR=ON`.
+
+### Adding tests
+
+Tests for a module live in its `tests` directory, which the module's `CMakeLists.txt` adds inside `if(BUILD_TESTING)`. To add a test executable, declare it in that directory's `CMakeLists.txt`, link it against `GTest::gtest_main`, and register it with `gtest_discover_tests()`. CTest then finds every test case in it, and CI runs them with no further changes, because the workflow runs `ctest` over the whole build rather than a list of tests. Put helpers and fixtures shared by the tests in the directory's `support` subdirectory, and keep the test files themselves to tests.
 
 ## Build Options
 
