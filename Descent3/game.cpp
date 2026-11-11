@@ -666,6 +666,7 @@
 #include "cockpit.h"
 #include "config.h"
 #include "controls.h"
+#include "ddio.h"
 #include "dedicated_server.h"
 #include "demofile.h"
 #include "descent.h"
@@ -903,6 +904,8 @@ int GetScreenMode() { return Screen_mode; }
 //	use to sync to debug break handlers
 int rend_initted = 0;
 int Low_vidmem = 0;
+bool Mem_low_memory_mode = false;
+bool Mem_superlow_memory_mode = false;
 
 void SetScreenMode(int sm, bool force_res_change) {
   static int old_sm = SM_NULL;
@@ -1260,9 +1263,7 @@ void DoScreenshot() {
 
   std::filesystem::path screenshots_path = cf_GetWritableBaseDirectory() / "screenshots";
 
-  std::error_code ec;
-  std::filesystem::create_directories(screenshots_path, ec);
-  if (ec) {
+  if (!ddio_CreateDirectories(screenshots_path)) {
     LOG_ERROR << "Cannot create " << screenshots_path;
     return;
   }

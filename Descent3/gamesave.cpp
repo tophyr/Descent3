@@ -390,12 +390,9 @@ void SaveGameDialog() {
   savegame_dir = cf_GetWritableBaseDirectory() / "savegame";
 
   // create savegame directory if it didn't exist before.
-  std::error_code ec;
-  if (!std::filesystem::create_directories(savegame_dir, ec)) {
-    if (ec) {
-      DoMessageBox(TXT_ERROR, TXT_ERRCREATEDIR, MSGBOX_OK);
-      return;
-    }
+  if (!ddio_CreateDirectories(savegame_dir)) {
+    DoMessageBox(TXT_ERROR, TXT_ERRCREATEDIR, MSGBOX_OK);
+    return;
   }
 
   // open window
@@ -531,8 +528,6 @@ void __cdecl LoadGameDialogCB(newuiTiledWindow *wnd, void *data)
   if (id < (SAVE_HOTSPOT_ID + N_SAVE_SLOTS) && id != cb_data->cur_slot) {
     // new bitmap to be displayed!
     char filename[PSFILENAME_LEN + 1];
-    char pathname[_MAX_PATH];
-    char savegame_dir[_MAX_PATH];
     char desc[GAMESAVE_DESCLEN + 1];
     int bm_handle;
 
@@ -542,9 +537,8 @@ void __cdecl LoadGameDialogCB(newuiTiledWindow *wnd, void *data)
 
     LOG_DEBUG.printf("savegame slot=%d", id - SAVE_HOTSPOT_ID);
 
-    ddio_MakePath(savegame_dir, PATH_TO_CSTR(cf_GetWritableBaseDirectory()), "savegame", nullptr);
     snprintf(filename, sizeof(filename), "saveg00%d", (id - SAVE_HOTSPOT_ID));
-    ddio_MakePath(pathname, savegame_dir, filename, nullptr);
+    std::filesystem::path pathname = cf_GetWritableBaseDirectory() / "savegame" / filename;
 
     if (GetGameStateInfo(pathname, desc, &bm_handle)) {
       if (bm_handle > 0) {

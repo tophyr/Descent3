@@ -33,7 +33,6 @@ target_link_libraries(ddio PRIVATE
   SDL3::SDL3
   ddebug
   logger
-  mem
 )
 target_include_directories(ddio PUBLIC
   $<BUILD_INTERFACE:
@@ -41,6 +40,7 @@ target_include_directories(ddio PUBLIC
   >
   ${SDL3_INCLUDE_DIRS}
 )
+target_include_directories(ddio PRIVATE ${PROJECT_BINARY_DIR}/lib)
 
 if(BUILD_TESTING)
   add_subdirectory(tests)
